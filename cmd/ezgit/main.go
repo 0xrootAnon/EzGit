@@ -64,12 +64,12 @@ type Category struct {
 }
 
 var categories = []Category{
-	{ID: 0, Title: "Repository", Help: ""},
-	{ID: 1, Title: "Work on changes", Help: ""},
-	{ID: 2, Title: "Branching & merging", Help: ""},
-	{ID: 3, Title: "History & fixes", Help: ""},
-	{ID: 4, Title: "Remotes & Collaboration", Help: ""},
-	{ID: 5, Title: "Maintenance", Help: ""},
+	{ID: 0, Title: "Repository"},
+	{ID: 1, Title: "Work on changes"},
+	{ID: 2, Title: "Branching & merging"},
+	{ID: 3, Title: "History & fixes"},
+	{ID: 4, Title: "Remotes & Collaboration"},
+	{ID: 5, Title: "Maintenance"},
 }
 
 var itemsByCategory = map[int][]string{
@@ -184,8 +184,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case "enter":
 				m.currentCategory = m.selectedCategory
-				m.mode = "verbs"
+				if items, ok := itemsByCategory[m.currentCategory]; ok {
+					m.items = items
+				} else {
+				}
 				m.cursor = 0
+				m.mode = "verbs"
 				m.input.Placeholder = "Advanced / raw command (optional)"
 				return m, nil
 			case "esc":
@@ -214,14 +218,44 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.input.SetValue("")
 					m.mode = "wizard"
 				} else {
-					m.input.SetValue(name)
-					m.input.Focus()
-					m.mode = "verbs"
-					m.focusHandleInputStart()
+					a := &action.ActionDef{
+						Name: name,
+						Prompts: []action.Prompt{
+							{
+								Key:      "extra",
+								Label:    "Extra args (optional)",
+								Default:  "",
+								Required: false,
+							},
+						},
+						BuildFunc: func(inputs action.ActionInput) (string, []string, string) {
+							args := []string{name}
+							if v, ok := inputs["extra"]; ok {
+								v = strings.TrimSpace(v)
+								if v != "" {
+									fields := strings.Fields(v)
+									args = append(args, fields...)
+								}
+							}
+							preview := "git " + strings.Join(args, " ")
+							return "git", args, preview
+						},
+						IsDestructive: func(inputs action.ActionInput) bool {
+							return false
+						},
+					}
+					m.currentAction = a
+					m.wizardInputs = make(action.ActionInput)
+					m.promptIndex = 0
+					m.input.SetValue("")
+					m.input.Placeholder = "optional args (e.g. -a --force)"
+					m.mode = "wizard"
 				}
 				return m, nil
 			case "esc":
 				m.mode = "home"
+				m.items = nil
+				m.cursor = 0
 				return m, nil
 			default:
 				if isPrintableKey(k) {
@@ -374,7 +408,7 @@ func (m model) View() string {
 	var left string
 	switch m.mode {
 	case "home":
-		left = renderCategories(m.selectedCategory)
+		left = m.renderCategoriesBox()
 	case "verbs":
 		left = m.renderVerbsPane()
 	case "wizard":
@@ -384,7 +418,7 @@ func (m model) View() string {
 	case "confirm":
 		left = m.renderConfirm()
 	default:
-		left = renderCategories(m.selectedCategory)
+		left = m.renderCategoriesBox()
 	}
 
 	outputBox := m.renderOutputWithStream()
@@ -394,7 +428,6 @@ func (m model) View() string {
 }
 
 func (m model) renderVerbsPane() string {
-	cat := renderCategories(m.selectedCategory)
 	lines := []string{}
 	for i, it := range m.items {
 		if i == m.cursor {
@@ -407,7 +440,7 @@ func (m model) renderVerbsPane() string {
 	if m.input.Focused() || m.input.Value() != "" {
 		input = "\n\n" + lipgloss.NewStyle().Bold(true).Render("Advanced / Raw:") + "\n" + m.input.View()
 	}
-	body := lipgloss.JoinVertical(lipgloss.Left, cat, strings.Join(lines, "\n"), input)
+	body := lipgloss.JoinVertical(lipgloss.Left, strings.Join(lines, "\n"), input)
 	return lipgloss.NewStyle().Width(40).Render(body)
 }
 
@@ -461,16 +494,16 @@ func (m model) renderOutputWithStream() string {
 	return lipgloss.NewStyle().Width(80).Render(lipgloss.JoinVertical(lipgloss.Left, head, content))
 }
 
-func renderCategories(selected int) string {
-	var b strings.Builder
+func (m model) renderCategoriesBox() string {
+	lines := []string{}
 	for i, c := range categories {
-		indicator := "  "
-		if i == selected {
-			indicator = "> "
+		if i == m.selectedCategory {
+			lines = append(lines, m.activeStyle.Render(fmt.Sprintf("> %s ", c.Title)))
+		} else {
+			lines = append(lines, m.itemStyle.Render(fmt.Sprintf("  %s ", c.Title)))
 		}
-		fmt.Fprintf(&b, "%s%s — %s\n", indicator, c.Title, c.Help)
 	}
-	return b.String()
+	return lipgloss.NewStyle().Width(40).Render(strings.Join(lines, "\n"))
 }
 
 func isPrintableKey(k string) bool {
