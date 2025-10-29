@@ -1,8 +1,12 @@
 package safety
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"os"
 	"strings"
+	"time"
 )
 
 type Config struct {
@@ -60,4 +64,27 @@ func (s *Safety) IsDestructive(cmd string, args []string) bool {
 
 func TypedPrompt(cmd string, args []string) string {
 	return fmt.Sprintf("Type 'yes-I-mean-it' to confirm %s %v", cmd, args)
+}
+
+func (s *Safety) RequireTypedConfirmation(cmd string, args []string) bool {
+	return s.RequireTypedConfirmationReader(os.Stdin, cmd, args)
+}
+
+func (s *Safety) RequireTypedConfirmationReader(r io.Reader, cmd string, args []string) bool {
+	confirmStr := "yes-I-mean-it"
+	fmt.Printf("\n*** Destructive operation preview ***\n")
+	preview := fmt.Sprintf("%s %s", cmd, strings.Join(args, " "))
+	fmt.Printf("Preview: %s\n", preview)
+	fmt.Printf("\nThis operation is potentially destructive.\nType '%s' to proceed, or press Enter to abort: ", confirmStr)
+
+	reader := bufio.NewReader(r)
+	line, _ := reader.ReadString('\n')
+	line = strings.TrimSpace(line)
+	if line == confirmStr {
+		return true
+	}
+
+	fmt.Printf("Confirmation failed. Aborting.\n")
+	time.Sleep(150 * time.Millisecond)
+	return false
 }

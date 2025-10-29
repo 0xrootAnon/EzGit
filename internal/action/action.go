@@ -47,6 +47,25 @@ func (a *ActionDef) Validate(inputs ActionInput) error {
 	return nil
 }
 
+func (a *ActionDef) Preview(inputs ActionInput) []string {
+	var previews []string
+
+	if a.BuildFunc != nil {
+		cmd, args, preview := a.Build(inputs)
+		if preview != "" {
+			previews = append(previews, preview)
+		} else if cmd != "" {
+			previews = append(previews, fmt.Sprintf("%s %s", cmd, strings.Join(args, " ")))
+		}
+		return previews
+	}
+
+	if strings.TrimSpace(a.Help) != "" {
+		previews = append(previews, a.Help)
+	}
+	return previews
+}
+
 func (a *ActionDef) Build(inputs ActionInput) (string, []string, string) {
 	if a.BuildFunc != nil {
 		return a.BuildFunc(inputs)

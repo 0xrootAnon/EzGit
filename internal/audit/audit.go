@@ -3,6 +3,7 @@ package audit
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -21,6 +22,38 @@ type AuditEntry struct {
 	Stderr      string    `json:"stderr"`
 	ExitCode    int       `json:"exit_code"`
 	Explanation string    `json:"explanation"`
+}
+
+type Entry struct {
+	Timestamp time.Time `json:"timestamp"`
+	Action    string    `json:"action"`
+	Command   string    `json:"command"`
+	Args      []string  `json:"args"`
+	ExitCode  int       `json:"exit_code"`
+	Stdout    string    `json:"stdout,omitempty"`
+	Stderr    string    `json:"stderr,omitempty"`
+}
+
+func AppendAudit(enabled bool, e Entry) error {
+	if !enabled {
+		return nil
+	}
+	home := os.Getenv("HOME")
+	if home == "" {
+		home = os.TempDir()
+	}
+	dir := filepath.Join(home, ".config", "ezgit")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+	fpath := filepath.Join(dir, "audit.log")
+	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	enc := json.NewEncoder(f)
+	return enc.Encode(e)
 }
 
 func NewAudit(path string) (*Audit, error) {

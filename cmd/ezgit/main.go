@@ -1,11 +1,16 @@
 package main
 
 import (
-	"bytes"
+	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
+	"time"
+
+	"ezgit/internal/action"
+	"ezgit/internal/audit"
+	execpkg "ezgit/internal/exec"
+	"ezgit/internal/windows"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -19,50 +24,102 @@ const (
 )
 
 type model struct {
-	items       []string
-	cursor      int
-	quitting    bool
-	statusLines []string
-	input       textinput.Model
-	focus       int
-	running     bool
-	scroll      int
-
-	headStyle   lipgloss.Style
-	itemStyle   lipgloss.Style
-	activeStyle lipgloss.Style
-	footerStyle lipgloss.Style
-	panelStyle  lipgloss.Style
+	items            []string
+	cursor           int
+	selectedCategory int
+	currentCategory  int
+	mode             string // "home","verbs","wizard","preview","confirm","running"
+	quitting         bool
+	currentAction    *action.ActionDef
+	wizardInputs     action.ActionInput
+	promptIndex      int
+	statusLines      []string
+	streamLines      []string
+	scroll           int
+	running          bool
+	runCancel        context.CancelFunc
+	input            textinput.Model
+	headStyle        lipgloss.Style
+	itemStyle        lipgloss.Style
+	activeStyle      lipgloss.Style
+	footerStyle      lipgloss.Style
+	panelStyle       lipgloss.Style
 }
 
-type doneMsg struct {
-	err    error
-	output string
+type streamLineMsg struct {
+	Line  string
+	IsErr bool
+}
+type actionDoneMsg struct {
+	Exit   int
+	Out    string
+	ErrOut string
+	Err    error
+}
+
+type Category struct {
+	ID    int
+	Title string
+	Help  string
+}
+
+var categories = []Category{
+	{ID: 0, Title: "Repository", Help: ""},
+	{ID: 1, Title: "Work on changes", Help: ""},
+	{ID: 2, Title: "Branching & merging", Help: ""},
+	{ID: 3, Title: "History & fixes", Help: ""},
+	{ID: 4, Title: "Remotes & Collaboration", Help: ""},
+	{ID: 5, Title: "Maintenance", Help: ""},
+}
+
+var itemsByCategory = map[int][]string{
+	0: { // Repository
+		"Create repo", "Clone repo", "Export snapshot", "Apply bundle", "Show history", "Show commit",
+		"Search", "Blame", "Commits by author", "Describe",
+	},
+	1: { // Work on changes
+		"Stage files", "Unstage/Restore", "Rename/Move file", "Commit", "Status", "Diff", "Clean workspace",
+	},
+	2: { // Branching & merging
+		"Create branch", "Switch branch", "Merge branch", "Rebase", "Tag release", "Manage worktrees",
+	},
+	3: { // History & fixes
+		"Revert commit", "Reset (soft/mixed/hard)", "Reflog", "Bisect", "Cherry-pick", "Format patch", "Rewrite history",
+	},
+	4: { // Remotes & Collaboration
+		"Manage remote", "Fetch", "Pull", "Push", "Show remote refs", "Credentials", "Submodules",
+	},
+	5: { // Maintenance
+		"Stash", "Apply stash", "Pop stash", "List stashes", "FSCK", "GC", "Prune", "Verify packs",
+	},
 }
 
 func initialModel() model {
-	items := []string{
-		"init",
-		"clone",
-		"add",
-		"commit",
-		"status",
-		"push",
-		"branch",
-		"merge",
-		"rebase",
-		"raw",
-	}
-
 	ti := textinput.New()
-	ti.Placeholder = "type git command here (eg: status | commit -m \"msg\")"
+	ti.Placeholder = ""
 	ti.CharLimit = 512
 	ti.Width = 60
 
 	return model{
-		items:       items,
-		input:       ti,
-		focus:       focusList,
+		items: []string{
+			"init",
+			"clone",
+			"add",
+			"commit",
+			"status",
+			"push",
+			"branch",
+			"merge",
+			"rebase",
+			"raw",
+		},
+		cursor:           0,
+		selectedCategory: 0,
+		currentCategory:  0,
+		mode:             "home",
+		input:            ti,
+		wizardInputs:     make(action.ActionInput),
+
 		headStyle:   lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("205")),
 		itemStyle:   lipgloss.NewStyle().PaddingLeft(1).Foreground(lipgloss.Color("250")),
 		activeStyle: lipgloss.NewStyle().PaddingLeft(1).Foreground(lipgloss.Color("39")).Background(lipgloss.Color("236")).Bold(true),
@@ -71,24 +128,72 @@ func initialModel() model {
 	}
 }
 
-func (m model) Init() tea.Cmd {
-	return nil
+func actionRegistryGet(name string) (*action.ActionDef, bool) {
+	return nil, false
 }
+
+func (m model) Init() tea.Cmd { return nil }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		k := msg.String()
+
 		if k == "q" || k == "ctrl+c" {
+			if m.runCancel != nil && m.mode == "running" {
+				m.runCancel()
+				return m, nil
+			}
 			m.quitting = true
 			return m, tea.Quit
 		}
-		if k == "esc" {
-			m.focus = focusList
-			m.input.Blur()
-			return m, nil
+
+		if m.mode == "running" {
+			switch k {
+			case "c", "ctrl+c":
+				if m.runCancel != nil {
+					m.runCancel()
+					m.statusLines = append(m.statusLines, "[cancelling running command]")
+				}
+				return m, nil
+			case "pgup":
+				if m.scroll > 0 {
+					m.scroll -= 10
+					if m.scroll < 0 {
+						m.scroll = 0
+					}
+				}
+				return m, nil
+			case "pgdown":
+				m.scroll += 10
+				return m, nil
+			}
 		}
-		if m.focus == focusList {
+
+		if m.mode == "home" {
+			switch k {
+			case "up", "k":
+				if m.selectedCategory > 0 {
+					m.selectedCategory--
+				}
+				return m, nil
+			case "down", "j":
+				if m.selectedCategory < len(categories)-1 {
+					m.selectedCategory++
+				}
+				return m, nil
+			case "enter":
+				m.currentCategory = m.selectedCategory
+				m.mode = "verbs"
+				m.cursor = 0
+				m.input.Placeholder = "Advanced / raw command (optional)"
+				return m, nil
+			case "esc":
+				return m, nil
+			}
+		}
+
+		if m.mode == "verbs" {
 			switch k {
 			case "up", "k":
 				if m.cursor > 0 {
@@ -101,60 +206,157 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			case "enter":
-				sel := m.items[m.cursor]
-				m.input.SetValue(sel)
-				m.input.CursorEnd()
-				m.focus = focusInput
-				m.input.Focus()
+				name := m.items[m.cursor]
+				if a, ok := actionRegistryGet(name); ok {
+					m.currentAction = a
+					m.wizardInputs = make(action.ActionInput)
+					m.promptIndex = 0
+					m.input.SetValue("")
+					m.mode = "wizard"
+				} else {
+					m.input.SetValue(name)
+					m.input.Focus()
+					m.mode = "verbs"
+					m.focusHandleInputStart()
+				}
+				return m, nil
+			case "esc":
+				m.mode = "home"
 				return m, nil
 			default:
 				if isPrintableKey(k) {
-					m.focus = focusInput
 					m.input.Focus()
 					v := m.input.Value()
 					m.input.SetValue(v + msg.String())
+					return m, nil
 				}
 				return m, nil
 			}
 		}
 
-		if m.focus == focusInput {
+		if m.mode == "wizard" {
 			var cmd tea.Cmd
 			m.input, cmd = m.input.Update(msg)
-			if k == "enter" && strings.TrimSpace(m.input.Value()) != "" && !m.running {
-				m.running = true
-				cmdStr := m.input.Value()
-				return m, tea.Batch(runGitCmd(cmdStr), cmd)
+			if k == "enter" {
+				if m.currentAction == nil || m.promptIndex >= len(m.currentAction.Prompts) {
+					m.mode = "preview"
+					return m, cmd
+				}
+				p := m.currentAction.Prompts[m.promptIndex]
+				m.wizardInputs[p.Key] = strings.TrimSpace(m.input.Value())
+				m.input.SetValue("")
+				m.promptIndex++
+				if m.promptIndex >= len(m.currentAction.Prompts) {
+					m.mode = "preview"
+				}
+			}
+			if k == "esc" {
+				m.mode = "verbs"
+				return m, cmd
 			}
 			return m, cmd
 		}
 
-		if m.focus == focusRun {
+		if m.mode == "preview" {
 			switch k {
-			case "pgup":
-				if m.scroll > 0 {
-					m.scroll -= 10
-					if m.scroll < 0 {
-						m.scroll = 0
-					}
+			case "enter":
+				if m.currentAction != nil && m.currentAction.IsDestructive != nil && m.currentAction.IsDestructive(m.wizardInputs) {
+					m.mode = "confirm"
+					m.input.SetValue("")
+					m.input.Placeholder = "type yes-I-mean-it to proceed"
+					m.input.Focus()
+					return m, nil
 				}
-			case "pgdown":
-				m.scroll += 10
+				if m.currentAction != nil {
+					cmdName, args, _ := m.currentAction.Build(m.wizardInputs)
+					cmd, cancel := runActionCmdWithCancel(cmdName, args)
+					m.runCancel = cancel
+					m.streamLines = nil
+					m.mode = "running"
+					m.running = true
+					return m, cmd
+				}
+				return m, nil
+			case "esc":
+				m.mode = "wizard"
+				m.promptIndex = intMax(0, len(m.currentAction.Prompts)-1)
+				return m, nil
 			}
 		}
 
-	case doneMsg:
+		if m.mode == "confirm" {
+			var cmd tea.Cmd
+			m.input, cmd = m.input.Update(msg)
+			if k == "enter" {
+				if strings.TrimSpace(m.input.Value()) == "yes-I-mean-it" {
+					backup := "preop/" + time.Now().Format("20060102-150405")
+					_, _, _, _ = (&execpkg.Runner{}).Run(context.Background(), "git", []string{"branch", backup}, nil, 0)
+
+					cmdName, args, _ := m.currentAction.Build(m.wizardInputs)
+					cmdRun, cancel := runActionCmdWithCancel(cmdName, args)
+					m.runCancel = cancel
+					m.streamLines = nil
+					m.mode = "running"
+					m.running = true
+					return m, cmdRun
+				}
+				m.statusLines = append(m.statusLines, "[typed confirmation failed; aborting]")
+				m.mode = "preview"
+				return m, nil
+			}
+			return m, cmd
+		}
+
+		if m.mode == "verbs" && m.input.Focused() {
+			var cmd tea.Cmd
+			m.input, cmd = m.input.Update(msg)
+			if k == "enter" {
+				raw := strings.TrimSpace(m.input.Value())
+				if raw != "" {
+					fields := strings.Fields(raw)
+					if fields[0] == "git" {
+						fields = fields[1:]
+					}
+					cmdRun, cancel := runActionCmdWithCancel("git", fields)
+					m.runCancel = cancel
+					m.streamLines = nil
+					m.mode = "running"
+					m.running = true
+					return m, cmdRun
+				}
+			}
+			return m, cmd
+		}
+
+	case streamLineMsg:
+		m.streamLines = append(m.streamLines, msg.Line)
+		return m, nil
+
+	case actionDoneMsg:
 		m.running = false
-		if msg.output != "" {
-			lines := strings.Split(msg.output, "\n")
-			m.statusLines = append(m.statusLines, lines...)
+		m.mode = "preview"
+		if strings.TrimSpace(msg.Out) != "" {
+			m.statusLines = append(m.statusLines, strings.Split(msg.Out, "\n")...)
 		}
-		if msg.err != nil {
-			m.statusLines = append(m.statusLines, fmt.Sprintf("\n[process finished with error: %v]", msg.err))
+		if strings.TrimSpace(msg.ErrOut) != "" {
+			m.statusLines = append(m.statusLines, strings.Split(msg.ErrOut, "\n")...)
+		}
+		if msg.Err != nil {
+			m.statusLines = append(m.statusLines, fmt.Sprintf("[process finished with error: %v]", msg.Err))
 		} else {
-			m.statusLines = append(m.statusLines, "\n[process finished successfully]")
+			m.statusLines = append(m.statusLines, "[process finished successfully]")
 		}
-		m.focus = focusRun
+		_ = audit.AppendAudit(true, audit.Entry{
+			Timestamp: time.Now(),
+			Action: func() string {
+				if m.currentAction != nil {
+					return m.currentAction.Name
+				}
+				return ""
+			}(),
+			Command: "", Args: nil,
+			ExitCode: msg.Exit, Stdout: msg.Out, Stderr: msg.ErrOut,
+		})
 		return m, nil
 	}
 
@@ -167,21 +369,32 @@ func (m model) View() string {
 	}
 
 	head := m.headStyle.Render("EzGit by 0xrootAnon")
-	help := m.footerStyle.Render("Arrows: move • Enter: select/prefill • Type: start typing • Esc: back • q: quit • PgUp/PgDn: scroll output")
+	help := m.footerStyle.Render("Arrows: move • Enter: select • Type: start typing • Esc: back • q: quit • PgUp/PgDn: scroll output")
 
-	listBox := m.renderList()
-	inputBox := m.renderInput()
-	outputBox := m.renderOutput()
+	var left string
+	switch m.mode {
+	case "home":
+		left = renderCategories(m.selectedCategory)
+	case "verbs":
+		left = m.renderVerbsPane()
+	case "wizard":
+		left = m.renderWizard()
+	case "preview":
+		left = m.renderPreview()
+	case "confirm":
+		left = m.renderConfirm()
+	default:
+		left = renderCategories(m.selectedCategory)
+	}
 
-	left := lipgloss.JoinVertical(lipgloss.Left, listBox, "", inputBox)
-	right := outputBox
-
-	main := lipgloss.JoinHorizontal(lipgloss.Top, m.panelStyle.Render(left), lipgloss.NewStyle().PaddingLeft(1).Render(right))
+	outputBox := m.renderOutputWithStream()
+	main := lipgloss.JoinHorizontal(lipgloss.Top, m.panelStyle.Render(left), lipgloss.NewStyle().PaddingLeft(1).Render(outputBox))
 
 	return lipgloss.JoinVertical(lipgloss.Left, head, main, "", help)
 }
 
-func (m model) renderList() string {
+func (m model) renderVerbsPane() string {
+	cat := renderCategories(m.selectedCategory)
 	lines := []string{}
 	for i, it := range m.items {
 		if i == m.cursor {
@@ -190,37 +403,74 @@ func (m model) renderList() string {
 			lines = append(lines, m.itemStyle.Render(fmt.Sprintf("  %s", it)))
 		}
 	}
-	return lipgloss.NewStyle().Width(30).Render(strings.Join(lines, "\n"))
-}
-
-func (m model) renderInput() string {
-	hdr := lipgloss.NewStyle().Bold(true).Render("Command")
-
-	val := m.input.View()
-	if m.focus == focusInput {
-		val = lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Render(val)
+	input := ""
+	if m.input.Focused() || m.input.Value() != "" {
+		input = "\n\n" + lipgloss.NewStyle().Bold(true).Render("Advanced / Raw:") + "\n" + m.input.View()
 	}
-	return lipgloss.JoinVertical(lipgloss.Left, hdr, val)
+	body := lipgloss.JoinVertical(lipgloss.Left, cat, strings.Join(lines, "\n"), input)
+	return lipgloss.NewStyle().Width(40).Render(body)
 }
 
-func (m model) renderOutput() string {
+func (m model) renderWizard() string {
+	if m.currentAction == nil || m.promptIndex >= len(m.currentAction.Prompts) {
+		return lipgloss.NewStyle().Width(40).Render("(no prompts)")
+	}
+	p := m.currentAction.Prompts[m.promptIndex]
+	hdr := lipgloss.NewStyle().Bold(true).Render("Prompt")
+	label := fmt.Sprintf("%s", p.Label)
+	def := ""
+	if p.Default != "" {
+		def = fmt.Sprintf(" (default: %s)", p.Default)
+	}
+	return lipgloss.JoinVertical(lipgloss.Left, hdr, label+def, m.input.View())
+}
+
+func (m model) renderPreview() string {
+	hdr := lipgloss.NewStyle().Bold(true).Render("Preview")
+	lines := []string{hdr}
+	if m.currentAction != nil {
+		previews := m.currentAction.Preview(m.wizardInputs)
+		for _, v := range previews {
+			lines = append(lines, v)
+		}
+		if m.currentAction.IsDestructive != nil && m.currentAction.IsDestructive(m.wizardInputs) {
+			lines = append(lines, "", "[This operation is DESTRUCTIVE. Press Enter → typed confirmation required]")
+		} else {
+			lines = append(lines, "", "[Press Enter to Run, Esc to go back]")
+		}
+	}
+	return lipgloss.NewStyle().Width(40).Render(strings.Join(lines, "\n"))
+}
+
+func (m model) renderConfirm() string {
+	hdr := lipgloss.NewStyle().Bold(true).Render("Confirm (type yes-I-mean-it)")
+	return lipgloss.JoinVertical(lipgloss.Left, hdr, m.input.View())
+}
+
+func (m model) renderOutputWithStream() string {
 	head := lipgloss.NewStyle().Bold(true).Render("Output")
-	content := strings.Join(m.statusLines, "\n")
-	lines := strings.Split(content, "\n")
-	start := m.scroll
-	end := start + 20
-	if start > len(lines) {
-		start = len(lines)
+	var content string
+	if len(m.streamLines) > 0 {
+		content = strings.Join(m.streamLines, "\n")
+	} else {
+		content = strings.Join(m.statusLines, "\n")
 	}
-	if end > len(lines) {
-		end = len(lines)
+	if strings.TrimSpace(content) == "" {
+		content = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("(no output yet)")
 	}
-	visible := lines[start:end]
-	body := strings.Join(visible, "\n")
-	if body == "" {
-		body = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("(no output yet)")
+	return lipgloss.NewStyle().Width(80).Render(lipgloss.JoinVertical(lipgloss.Left, head, content))
+}
+
+func renderCategories(selected int) string {
+	var b strings.Builder
+	for i, c := range categories {
+		indicator := "  "
+		if i == selected {
+			indicator = "> "
+		}
+		fmt.Fprintf(&b, "%s%s — %s\n", indicator, c.Title, c.Help)
 	}
-	return lipgloss.NewStyle().Width(80).Render(lipgloss.JoinVertical(lipgloss.Left, head, body))
+	return b.String()
 }
 
 func isPrintableKey(k string) bool {
@@ -233,27 +483,61 @@ func isPrintableKey(k string) bool {
 	return false
 }
 
-func runGitCmd(raw string) tea.Cmd {
-	return func() tea.Msg {
-		fields := strings.Fields(raw)
-		if len(fields) == 0 {
-			return doneMsg{err: fmt.Errorf("empty command")}
-		}
-		if fields[0] == "git" {
-			fields = fields[1:]
-		}
-		cmd := exec.Command("git", fields...)
-		var outBuf, errBuf bytes.Buffer
-		cmd.Stdout = &outBuf
-		cmd.Stderr = &errBuf
-
-		err := cmd.Run()
-		combined := strings.TrimSpace(outBuf.String() + "\n" + errBuf.String())
-		return doneMsg{err: err, output: combined}
+func intMax(a, b int) int {
+	if a > b {
+		return a
 	}
+	return b
+}
+
+func runActionCmdWithCancel(cmdName string, args []string) (tea.Cmd, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	return func() tea.Msg {
+		lineCh := make(chan streamLineMsg, 512)
+		doneCh := make(chan actionDoneMsg, 1)
+
+		go func() {
+			runner := &execpkg.Runner{}
+			exit, out, errOut, err := runner.Run(ctx, cmdName, args, func(line string, isErr bool) {
+				select {
+				case lineCh <- streamLineMsg{Line: line, IsErr: isErr}:
+				default:
+				}
+			}, 0)
+			doneCh <- actionDoneMsg{Exit: exit, Out: out, ErrOut: errOut, Err: err}
+			close(lineCh)
+		}()
+
+		for {
+			select {
+			case l, ok := <-lineCh:
+				if !ok {
+					return <-doneCh
+				}
+				return l
+			case d := <-doneCh:
+				return d
+			}
+		}
+	}, cancel
+}
+
+func (m *model) focusHandleInputStart() {
+	m.input.Focus()
 }
 
 func main() {
+	path := windows.DetectGit()
+	if path == "" {
+		fmt.Print("Git not found on this machine. Open download page? (y/N): ")
+		var resp string
+		fmt.Scanln(&resp)
+		if strings.ToLower(strings.TrimSpace(resp)) == "y" {
+			_ = windows.OpenBrowser(windows.OpenDownloadURL())
+		}
+	}
+
 	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	if err := p.Start(); err != nil {
 		fmt.Printf("Error running program: %v\n", err)

@@ -1,6 +1,7 @@
 package exec
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
@@ -14,14 +15,9 @@ import (
 
 type Runner struct{}
 
-func NewRunner() *Runner {
-	return &Runner{}
-}
+type StreamCallback func(line string, isErr bool)
 
-func (r *Runner) Run(ctx context.Context, name string, args ...string) (exitCode int, stdout string, stderr string, execErr error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
-	defer cancel()
-
+func (r *Runner) Run(ctx context.Context, name string, args []string, streamCb StreamCallback, timeout time.Duration) (int, string, string, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -32,45 +28,72 @@ func (r *Runner) Run(ctx context.Context, name string, args ...string) (exitCode
 		return -1, "", "", err
 	}
 
+	var stdoutBuf, stderrBuf bytes.Buffer
 	if err := cmd.Start(); err != nil {
 		return -1, "", "", err
 	}
 
-	var outBuf, errBuf bytes.Buffer
 	var wg sync.WaitGroup
 	wg.Add(2)
-	go func() {
+	readPipe := func(rdr io.Reader, dest *bytes.Buffer, isErr bool) {
 		defer wg.Done()
-		io.Copy(&outBuf, stdoutPipe)
-	}()
+		scanner := bufio.NewScanner(rdr)
+		for scanner.Scan() {
+			line := scanner.Text()
+			dest.WriteString(line + "\n")
+			if streamCb != nil {
+				streamCb(line, isErr)
+			}
+		}
+	}
+
+	go readPipe(stdoutPipe, &stdoutBuf, false)
+	go readPipe(stderrPipe, &stderrBuf, true)
+
+	errCh := make(chan error, 1)
 	go func() {
-		defer wg.Done()
-		io.Copy(&errBuf, stderrPipe)
+		errCh <- cmd.Wait()
 	}()
+	var waitErr error
+	if timeout > 0 {
+		select {
+		case waitErr = <-errCh:
+		case <-time.After(timeout):
+			_ = cmd.Process.Kill()
+			waitErr = context.DeadlineExceeded
+		case <-ctx.Done():
+			_ = cmd.Process.Kill()
+			waitErr = ctx.Err()
+		}
+	} else {
+		select {
+		case waitErr = <-errCh:
+		case <-ctx.Done():
+			_ = cmd.Process.Kill()
+			waitErr = ctx.Err()
+		}
+	}
 	wg.Wait()
-	err = cmd.Wait()
-	exit := 0
-	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			if status, ok2 := ee.Sys().(syscall.WaitStatus); ok2 {
-				exit = status.ExitStatus()
+
+	stdoutStr := strings.TrimSuffix(stdoutBuf.String(), "\n")
+	stderrStr := strings.TrimSuffix(stderrBuf.String(), "\n")
+
+	exitCode := 0
+	if waitErr != nil {
+		var exitErr *exec.ExitError
+		if errors.As(waitErr, &exitErr) {
+			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+				exitCode = status.ExitStatus()
 			} else {
-				exit = -1
+				exitCode = 1
 			}
 		} else {
-			execErr = err
-			exit = -1
+			if waitErr == context.DeadlineExceeded || waitErr == context.Canceled {
+				return -1, stdoutStr, stderrStr, waitErr
+			}
+			return -1, stdoutStr, stderrStr, waitErr
 		}
 	}
 
-	stdoutStr := strings.TrimSpace(outBuf.String())
-	stderrStr := strings.TrimSpace(errBuf.String())
-
-	if ctx.Err() != nil {
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			execErr = ctx.Err()
-		}
-	}
-
-	return exit, stdoutStr, stderrStr, execErr
+	return exitCode, stdoutStr, stderrStr, nil
 }
