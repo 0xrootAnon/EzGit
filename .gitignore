@@ -1,0 +1,14 @@
+/build/
+*.exe
+*.out
+*.dll
+*.so
+*.dylib
+/bin/
+pkg/
+vendor/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
