@@ -11,6 +11,7 @@ type ActionInput map[string]string
 type ActionDef struct {
 	Name          string
 	Help          string
+	Category      int
 	Prompts       []Prompt
 	BuildFunc     func(ActionInput) (cmd string, args []string, preview string)
 	ValidateFunc  func(ActionInput) error
@@ -24,6 +25,8 @@ type Prompt struct {
 	Placeholder string
 	Required    bool
 }
+
+var DefaultRegistry = NewRegistry()
 
 func (p Prompt) Ask(inputs ActionInput) string {
 	if v, ok := inputs[p.Key]; ok {

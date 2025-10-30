@@ -5,11 +5,21 @@ import (
 	"strings"
 )
 
-func registerPassthrough(r *Registry, name, help string, prompts []Prompt, defaultArgs []string) {
+const (
+	CatRepository  = 0
+	CatWork        = 1
+	CatBranch      = 2
+	CatHistory     = 3
+	CatRemotes     = 4
+	CatMaintenance = 5
+)
+
+func registerPassthrough(r *Registry, cat int, name, help string, prompts []Prompt, defaultArgs []string) {
 	r.Register(&ActionDef{
-		Name:    name,
-		Help:    help,
-		Prompts: prompts,
+		Name:     name,
+		Help:     help,
+		Category: cat,
+		Prompts:  prompts,
 		BuildFunc: func(in ActionInput) (string, []string, string) {
 			args := append([]string{}, defaultArgs...)
 			if extra, ok := in["args"]; ok && strings.TrimSpace(extra) != "" {
@@ -24,8 +34,9 @@ func registerPassthrough(r *Registry, name, help string, prompts []Prompt, defau
 
 func RegisterBuiltins(r *Registry) {
 	r.Register(&ActionDef{
-		Name: "init",
-		Help: "Initialize a new git repository and optional README",
+		Name:     "init",
+		Help:     "Initialize a new git repository and optional README",
+		Category: CatRepository,
 		Prompts: []Prompt{
 			{Key: "path", Label: "Directory", Default: ".", Required: true},
 			{Key: "readme", Label: "Create README? (y/N)", Default: "y"},
@@ -42,17 +53,19 @@ func RegisterBuiltins(r *Registry) {
 	})
 
 	r.Register(&ActionDef{
-		Name:    "status",
-		Help:    "Show git status",
-		Prompts: []Prompt{},
+		Name:     "status",
+		Help:     "Show git status",
+		Category: CatWork,
+		Prompts:  []Prompt{},
 		BuildFunc: func(in ActionInput) (string, []string, string) {
 			return "git", []string{"status"}, "git status"
 		},
 	})
 
 	r.Register(&ActionDef{
-		Name: "add",
-		Help: "Stage files",
+		Name:     "add",
+		Help:     "Stage files",
+		Category: CatWork,
 		Prompts: []Prompt{
 			{Key: "paths", Label: "Files to add (comma or space separated)", Default: "-A", Required: true},
 		},
@@ -70,8 +83,9 @@ func RegisterBuiltins(r *Registry) {
 	})
 
 	r.Register(&ActionDef{
-		Name: "commit",
-		Help: "Create a commit",
+		Name:     "commit",
+		Help:     "Create a commit",
+		Category: CatWork,
 		Prompts: []Prompt{
 			{Key: "message", Label: "Commit message", Default: "", Required: true},
 			{Key: "stage", Label: "Stage all changes first? (y/N)", Default: "y"},
@@ -90,8 +104,9 @@ func RegisterBuiltins(r *Registry) {
 	})
 
 	r.Register(&ActionDef{
-		Name: "push",
-		Help: "Push to remote",
+		Name:     "push",
+		Help:     "Push to remote",
+		Category: CatRemotes,
 		Prompts: []Prompt{
 			{Key: "remote", Label: "Remote name", Default: "origin"},
 			{Key: "branch", Label: "Branch", Default: "main"},
@@ -124,8 +139,9 @@ func RegisterBuiltins(r *Registry) {
 	})
 
 	r.Register(&ActionDef{
-		Name: "clone",
-		Help: "Clone a repository",
+		Name:     "clone",
+		Help:     "Clone a repository",
+		Category: CatRepository,
 		Prompts: []Prompt{
 			{Key: "url", Label: "Repository URL", Required: true},
 			{Key: "path", Label: "Directory (optional)", Default: ""},
@@ -140,8 +156,9 @@ func RegisterBuiltins(r *Registry) {
 	})
 
 	r.Register(&ActionDef{
-		Name: "undo",
-		Help: "Undo last commit (soft/mixed/hard) — convenience wrapper for HEAD~1",
+		Name:     "undo",
+		Help:     "Undo last commit (soft/mixed/hard) — convenience wrapper for HEAD~1",
+		Category: CatHistory,
 		Prompts: []Prompt{
 			{Key: "mode", Label: "Mode (soft/mixed/hard)", Default: "mixed", Required: true},
 		},
@@ -164,8 +181,9 @@ func RegisterBuiltins(r *Registry) {
 	})
 
 	r.Register(&ActionDef{
-		Name: "reset",
-		Help: "Reset current branch (soft/mixed/hard) to a specified ref",
+		Name:     "reset",
+		Help:     "Reset current branch (soft/mixed/hard) to a specified ref",
+		Category: CatHistory,
 		Prompts: []Prompt{
 			{Key: "mode", Label: "Mode (soft/mixed/hard)", Default: "mixed", Required: true},
 			{Key: "ref", Label: "Reference (e.g. HEAD~1 or origin/main)", Default: "HEAD~1", Required: true},
@@ -190,8 +208,9 @@ func RegisterBuiltins(r *Registry) {
 	})
 
 	r.Register(&ActionDef{
-		Name: "clean",
-		Help: "Remove untracked files (git clean). Default shows dry-run (-n).",
+		Name:     "clean",
+		Help:     "Remove untracked files (git clean). Default shows dry-run (-n).",
+		Category: CatWork,
 		Prompts: []Prompt{
 			{Key: "args", Label: "clean args (e.g. -fd)", Default: "-n"},
 		},
@@ -211,8 +230,9 @@ func RegisterBuiltins(r *Registry) {
 	})
 
 	r.Register(&ActionDef{
-		Name: "merge",
-		Help: "Merge a branch into current (preview with --no-commit by default)",
+		Name:     "merge",
+		Help:     "Merge a branch into current (preview with --no-commit by default)",
+		Category: CatBranch,
 		Prompts: []Prompt{
 			{Key: "branch", Label: "Branch to merge", Default: "", Required: true},
 			{Key: "strategy", Label: "Strategy (default/ours/theirs)", Default: ""},
@@ -238,8 +258,9 @@ func RegisterBuiltins(r *Registry) {
 	})
 
 	r.Register(&ActionDef{
-		Name: "rebase-interactive",
-		Help: "Interactive rebase helper (reorder/squash/edit msgs). Presents commits for editing before running rebase -i.",
+		Name:     "rebase-interactive",
+		Help:     "Interactive rebase helper (reorder/squash/edit msgs). Presents commits for editing before running rebase -i.",
+		Category: CatHistory,
 		Prompts: []Prompt{
 			{Key: "base", Label: "Base ref (e.g. HEAD~5)", Default: "HEAD~5", Required: true},
 			{Key: "autosquash", Label: "Autosquash? (y/N)", Default: "n"},
@@ -260,8 +281,9 @@ func RegisterBuiltins(r *Registry) {
 	})
 
 	r.Register(&ActionDef{
-		Name: "raw",
-		Help: "Run raw git command (expert mode). Type args exactly as you would in shell, without leading 'git'.",
+		Name:     "raw",
+		Help:     "Run raw git command (expert mode). Type args exactly as you would in shell, without leading 'git'.",
+		Category: CatRepository,
 		Prompts: []Prompt{
 			{Key: "command", Label: "Full git command (without leading 'git')", Required: true},
 		},
@@ -272,53 +294,54 @@ func RegisterBuiltins(r *Registry) {
 			return "git", parts, preview
 		},
 	})
-	registerPassthrough(r, "rebase", "Rebase (non-interactive)", []Prompt{{Key: "args", Label: "rebase args (e.g. origin/main)", Default: ""}}, []string{"rebase"})
-	registerPassthrough(r, "diff", "Show changes", []Prompt{{Key: "args", Label: "diff args (e.g. HEAD~1..HEAD)", Default: ""}}, []string{"diff"})
-	registerPassthrough(r, "log", "Show commit history", []Prompt{{Key: "args", Label: "log args (e.g. --oneline -n 20)", Default: "--oneline -n 20"}}, []string{"log"})
-	registerPassthrough(r, "show", "Show object", []Prompt{{Key: "args", Label: "show args (e.g. HEAD:filename)", Default: ""}}, []string{"show"})
-	registerPassthrough(r, "branch", "Branch operations", []Prompt{{Key: "args", Label: "branch args (e.g. -a / new-branch)", Default: "-a"}}, []string{"branch"})
-	registerPassthrough(r, "checkout", "Switch or restore files (checkout)", []Prompt{{Key: "args", Label: "checkout args (branch or -- file)", Default: ""}}, []string{"checkout"})
-	registerPassthrough(r, "switch", "Switch branches (preferred)", []Prompt{{Key: "args", Label: "switch args (branch)", Default: ""}}, []string{"switch"})
-	registerPassthrough(r, "mv", "Move/rename files in index", []Prompt{{Key: "args", Label: "mv args (src dst)", Default: ""}}, []string{"mv"})
-	registerPassthrough(r, "restore", "Restore working tree files (git restore)", []Prompt{{Key: "args", Label: "restore args (e.g. --staged file)", Default: ""}}, []string{"restore"})
-	registerPassthrough(r, "rm", "Remove files from tree/index", []Prompt{{Key: "args", Label: "rm args (files)", Default: ""}}, []string{"rm"})
-	registerPassthrough(r, "tag", "Create/list/delete tags", []Prompt{{Key: "args", Label: "tag args", Default: "-l"}}, []string{"tag"})
-	registerPassthrough(r, "fetch", "Fetch from remotes", []Prompt{{Key: "args", Label: "fetch args", Default: ""}}, []string{"fetch"})
-	registerPassthrough(r, "pull", "Fetch + merge/rebase", []Prompt{{Key: "args", Label: "pull args", Default: ""}}, []string{"pull"})
-	registerPassthrough(r, "remote", "Manage remotes", []Prompt{{Key: "args", Label: "remote args (add/origin url)", Default: "-v"}}, []string{"remote"})
-	registerPassthrough(r, "ls-remote", "List refs in a remote repo", []Prompt{{Key: "args", Label: "ls-remote args (remote URL)", Default: ""}}, []string{"ls-remote"})
-	registerPassthrough(r, "credential", "Credential helper interface", []Prompt{{Key: "args", Label: "credential args (fill/get/store)", Default: ""}}, []string{"credential"})
-	registerPassthrough(r, "daemon", "Run git daemon (advanced)", []Prompt{{Key: "args", Label: "daemon args", Default: ""}}, []string{"daemon"})
-	registerPassthrough(r, "stash", "Stash operations (list/save/apply/pop/drop)", []Prompt{{Key: "args", Label: "stash args (list | save <msg> | pop stash@{0})", Default: "list"}}, []string{"stash"})
-	registerPassthrough(r, "bisect", "Bisect to find the commit that introduced a bug", []Prompt{{Key: "args", Label: "bisect args (start/next/good/bad/visualize)", Default: ""}}, []string{"bisect"})
-	registerPassthrough(r, "reflog", "Show reference log", []Prompt{{Key: "args", Label: "reflog args (e.g. --decorate -n 50)", Default: "--decorate -n 50"}}, []string{"reflog"})
-	registerPassthrough(r, "help", "Show git help for a command", []Prompt{{Key: "args", Label: "help args (e.g. commit)", Default: ""}}, []string{"help"})
-	registerPassthrough(r, "rerere", "Reuse recorded resolution (git rerere)", []Prompt{{Key: "args", Label: "rerere args", Default: ""}}, []string{"rerere"})
-	registerPassthrough(r, "stash-pop", "Pop a stash entry", []Prompt{{Key: "args", Label: "pop args (e.g. stash@{0})", Default: "stash@{0}"}}, []string{"stash", "pop"})
-	registerPassthrough(r, "stash-drop", "Drop a stash entry", []Prompt{{Key: "args", Label: "drop args (e.g. stash@{0})", Default: "stash@{0}"}}, []string{"stash", "drop"})
-	registerPassthrough(r, "stash-list", "List stash entries", nil, []string{"stash", "list"})
-	registerPassthrough(r, "apply", "Apply a patch or stash (git apply)", []Prompt{{Key: "args", Label: "apply args (e.g. path/to/patch)", Default: ""}}, []string{"apply"})
-	registerPassthrough(r, "am", "Apply patches from mailbox (git am)", []Prompt{{Key: "args", Label: "am args (patch-file)", Default: ""}}, []string{"am"})
-	registerPassthrough(r, "format-patch", "Create patch files (git format-patch)", []Prompt{{Key: "args", Label: "format-patch args (range)", Default: ""}}, []string{"format-patch"})
-	registerPassthrough(r, "cherry", "Find commits not merged", []Prompt{{Key: "args", Label: "cherry args", Default: ""}}, []string{"cherry"})
-	registerPassthrough(r, "cherry-pick", "Apply the changes introduced by existing commits", []Prompt{{Key: "args", Label: "cherry-pick args (commit...)", Default: ""}}, []string{"cherry-pick"})
-	registerPassthrough(r, "revert", "Create a new commit that reverts earlier commits", []Prompt{{Key: "args", Label: "revert args (commit...)", Default: ""}}, []string{"revert"})
-	registerPassthrough(r, "filter-branch", "Rewrite branches (dangerous)", []Prompt{{Key: "args", Label: "filter-branch args (e.g. --env-filter ...)", Default: ""}}, []string{"filter-branch"})
-	registerPassthrough(r, "describe", "Describe a commit", []Prompt{{Key: "args", Label: "describe args (e.g. --tags --long)", Default: ""}}, []string{"describe"})
-	registerPassthrough(r, "fsck", "Check repository integrity", []Prompt{{Key: "args", Label: "fsck args", Default: ""}}, []string{"fsck"})
-	registerPassthrough(r, "verify-pack", "Verify pack files", []Prompt{{Key: "args", Label: "verify-pack args", Default: ""}}, []string{"verify-pack"})
-	registerPassthrough(r, "count-objects", "Count objects in repo", []Prompt{{Key: "args", Label: "count-objects args", Default: ""}}, []string{"count-objects"})
-	registerPassthrough(r, "prune", "Prune unreachable objects", []Prompt{{Key: "args", Label: "prune args", Default: ""}}, []string{"prune"})
-	registerPassthrough(r, "gc", "Garbage collect repository", []Prompt{{Key: "args", Label: "gc args", Default: ""}}, []string{"gc"})
-	registerPassthrough(r, "shortlog", "Summary of commits by author", []Prompt{{Key: "args", Label: "shortlog args (e.g. -s -n)", Default: "--summary"}}, []string{"shortlog"})
-	registerPassthrough(r, "whatchanged", "Older log-like command", []Prompt{{Key: "args", Label: "whatchanged args", Default: ""}}, []string{"whatchanged"})
-	registerPassthrough(r, "archive", "Create an archive of a tree", []Prompt{{Key: "args", Label: "archive args (format path)", Default: ""}}, []string{"archive"})
-	registerPassthrough(r, "bundle", "Create or apply a bundle", []Prompt{{Key: "args", Label: "bundle args", Default: ""}}, []string{"bundle"})
-	registerPassthrough(r, "submodule", "Manage submodules", []Prompt{{Key: "args", Label: "submodule args (add/update/status)", Default: ""}}, []string{"submodule"})
-	registerPassthrough(r, "worktree", "Manage worktrees", []Prompt{{Key: "args", Label: "worktree args (add/list/remove)", Default: ""}}, []string{"worktree"})
-	registerPassthrough(r, "config", "Get/set git config", []Prompt{{Key: "args", Label: "config args (e.g. --global user.name 'Me')", Default: ""}}, []string{"config"})
-	registerPassthrough(r, "grep", "Search in tracked files", []Prompt{{Key: "args", Label: "grep args", Default: "-n -- \"TODO\""}}, []string{"grep"})
-	registerPassthrough(r, "blame", "Annotate a file", []Prompt{{Key: "args", Label: "blame args (file)", Default: ""}}, []string{"blame"})
+
+	registerPassthrough(r, CatBranch, "rebase", "Rebase (non-interactive)", []Prompt{{Key: "args", Label: "rebase args (e.g. origin/main)", Default: ""}}, []string{"rebase"})
+	registerPassthrough(r, CatWork, "diff", "Show changes", []Prompt{{Key: "args", Label: "diff args (e.g. HEAD~1..HEAD)", Default: ""}}, []string{"diff"})
+	registerPassthrough(r, CatHistory, "log", "Show commit history", []Prompt{{Key: "args", Label: "log args (e.g. --oneline -n 20)", Default: "--oneline -n 20"}}, []string{"log"})
+	registerPassthrough(r, CatHistory, "show", "Show object", []Prompt{{Key: "args", Label: "show args (e.g. HEAD:filename)", Default: ""}}, []string{"show"})
+	registerPassthrough(r, CatBranch, "branch", "Branch operations", []Prompt{{Key: "args", Label: "branch args (e.g. -a / new-branch)", Default: "-a"}}, []string{"branch"})
+	registerPassthrough(r, CatBranch, "checkout", "Switch or restore files (checkout)", []Prompt{{Key: "args", Label: "checkout args (branch or -- file)", Default: ""}}, []string{"checkout"})
+	registerPassthrough(r, CatBranch, "switch", "Switch branches (preferred)", []Prompt{{Key: "args", Label: "switch args (branch)", Default: ""}}, []string{"switch"})
+	registerPassthrough(r, CatWork, "mv", "Move/rename files in index", []Prompt{{Key: "args", Label: "mv args (src dst)", Default: ""}}, []string{"mv"})
+	registerPassthrough(r, CatWork, "restore", "Restore working tree files (git restore)", []Prompt{{Key: "args", Label: "restore args (e.g. --staged file)", Default: ""}}, []string{"restore"})
+	registerPassthrough(r, CatWork, "rm", "Remove files from tree/index", []Prompt{{Key: "args", Label: "rm args (files)", Default: ""}}, []string{"rm"})
+	registerPassthrough(r, CatBranch, "tag", "Create/list/delete tags", []Prompt{{Key: "args", Label: "tag args", Default: "-l"}}, []string{"tag"})
+	registerPassthrough(r, CatRemotes, "fetch", "Fetch from remotes", []Prompt{{Key: "args", Label: "fetch args", Default: ""}}, []string{"fetch"})
+	registerPassthrough(r, CatRemotes, "pull", "Fetch + merge/rebase", []Prompt{{Key: "args", Label: "pull args", Default: ""}}, []string{"pull"})
+	registerPassthrough(r, CatRemotes, "remote", "Manage remotes", []Prompt{{Key: "args", Label: "remote args (add/origin url)", Default: "-v"}}, []string{"remote"})
+	registerPassthrough(r, CatRemotes, "ls-remote", "List refs in a remote repo", []Prompt{{Key: "args", Label: "ls-remote args (remote URL)", Default: ""}}, []string{"ls-remote"})
+	registerPassthrough(r, CatRemotes, "credential", "Credential helper interface", []Prompt{{Key: "args", Label: "credential args (fill/get/store)", Default: ""}}, []string{"credential"})
+	registerPassthrough(r, CatMaintenance, "daemon", "Run git daemon (advanced)", []Prompt{{Key: "args", Label: "daemon args", Default: ""}}, []string{"daemon"})
+	registerPassthrough(r, CatWork, "stash", "Stash operations (list/save/apply/pop/drop)", []Prompt{{Key: "args", Label: "stash args (list | save <msg> | pop stash@{0})", Default: "list"}}, []string{"stash"})
+	registerPassthrough(r, CatHistory, "bisect", "Bisect to find the commit that introduced a bug", []Prompt{{Key: "args", Label: "bisect args (start/next/good/bad/visualize)", Default: ""}}, []string{"bisect"})
+	registerPassthrough(r, CatHistory, "reflog", "Show reference log", []Prompt{{Key: "args", Label: "reflog args (e.g. --decorate -n 50)", Default: "--decorate -n 50"}}, []string{"reflog"})
+	registerPassthrough(r, CatRepository, "help", "Show git help for a command", []Prompt{{Key: "args", Label: "help args (e.g. commit)", Default: ""}}, []string{"help"})
+	registerPassthrough(r, CatHistory, "rerere", "Reuse recorded resolution (git rerere)", []Prompt{{Key: "args", Label: "rerere args (e.g. --no-ff)", Default: ""}}, []string{"rerere"})
+	registerPassthrough(r, CatWork, "stash-pop", "Pop a stash entry", []Prompt{{Key: "args", Label: "pop args (e.g. stash@{0})", Default: "stash@{0}"}}, []string{"stash", "pop"})
+	registerPassthrough(r, CatWork, "stash-drop", "Drop a stash entry", []Prompt{{Key: "args", Label: "drop args (e.g. stash@{0})", Default: "stash@{0}"}}, []string{"stash", "drop"})
+	registerPassthrough(r, CatWork, "stash-list", "List stash entries", nil, []string{"stash", "list"})
+	registerPassthrough(r, CatWork, "apply", "Apply a patch or stash (git apply)", []Prompt{{Key: "args", Label: "apply args (e.g. path/to/patch)", Default: ""}}, []string{"apply"})
+	registerPassthrough(r, CatWork, "am", "Apply patches from mailbox (git am)", []Prompt{{Key: "args", Label: "am args (patch-file)", Default: ""}}, []string{"am"})
+	registerPassthrough(r, CatHistory, "format-patch", "Create patch files (git format-patch)", []Prompt{{Key: "args", Label: "format-patch args (range)", Default: ""}}, []string{"format-patch"})
+	registerPassthrough(r, CatHistory, "cherry", "Find commits not merged", []Prompt{{Key: "args", Label: "cherry args", Default: ""}}, []string{"cherry"})
+	registerPassthrough(r, CatHistory, "cherry-pick", "Apply the changes introduced by existing commits", []Prompt{{Key: "args", Label: "cherry-pick args (commit...)", Default: ""}}, []string{"cherry-pick"})
+	registerPassthrough(r, CatHistory, "revert", "Create a new commit that reverts earlier commits", []Prompt{{Key: "args", Label: "revert args (commit...)", Default: ""}}, []string{"revert"})
+	registerPassthrough(r, CatHistory, "filter-branch", "Rewrite branches (dangerous)", []Prompt{{Key: "args", Label: "filter-branch args (e.g. --env-filter ...)", Default: ""}}, []string{"filter-branch"})
+	registerPassthrough(r, CatRepository, "describe", "Describe a commit", []Prompt{{Key: "args", Label: "describe args (e.g. --tags --long)", Default: ""}}, []string{"describe"})
+	registerPassthrough(r, CatMaintenance, "fsck", "Check repository integrity", []Prompt{{Key: "args", Label: "fsck args", Default: ""}}, []string{"fsck"})
+	registerPassthrough(r, CatMaintenance, "verify-pack", "Verify pack files", []Prompt{{Key: "args", Label: "verify-pack args", Default: ""}}, []string{"verify-pack"})
+	registerPassthrough(r, CatMaintenance, "count-objects", "Count objects in repo", []Prompt{{Key: "args", Label: "count-objects args", Default: ""}}, []string{"count-objects"})
+	registerPassthrough(r, CatMaintenance, "prune", "Prune unreachable objects", []Prompt{{Key: "args", Label: "prune args", Default: ""}}, []string{"prune"})
+	registerPassthrough(r, CatMaintenance, "gc", "Garbage collect repository", []Prompt{{Key: "args", Label: "gc args", Default: ""}}, []string{"gc"})
+	registerPassthrough(r, CatHistory, "shortlog", "Summary of commits by author", []Prompt{{Key: "args", Label: "shortlog args (e.g. -s -n)", Default: "--summary"}}, []string{"shortlog"})
+	registerPassthrough(r, CatHistory, "whatchanged", "Older log-like command", []Prompt{{Key: "args", Label: "whatchanged args", Default: ""}}, []string{"whatchanged"})
+	registerPassthrough(r, CatRepository, "archive", "Create an archive of a tree", []Prompt{{Key: "args", Label: "archive args (format path)", Default: ""}}, []string{"archive"})
+	registerPassthrough(r, CatRepository, "bundle", "Create or apply a bundle", []Prompt{{Key: "args", Label: "bundle args", Default: ""}}, []string{"bundle"})
+	registerPassthrough(r, CatRemotes, "submodule", "Manage submodules", []Prompt{{Key: "args", Label: "submodule args (add/update/status)", Default: ""}}, []string{"submodule"})
+	registerPassthrough(r, CatBranch, "worktree", "Manage worktrees", []Prompt{{Key: "args", Label: "worktree args (add/list/remove)", Default: ""}}, []string{"worktree"})
+	registerPassthrough(r, CatRepository, "config", "Get/set git config", []Prompt{{Key: "args", Label: "config args (e.g. --global user.name 'Me')", Default: ""}}, []string{"config"})
+	registerPassthrough(r, CatHistory, "grep", "Search in tracked files", []Prompt{{Key: "args", Label: "grep args", Default: "-n -- \"TODO\""}}, []string{"grep"})
+	registerPassthrough(r, CatHistory, "blame", "Annotate a file", []Prompt{{Key: "args", Label: "blame args (file)", Default: ""}}, []string{"blame"})
 }
 
 func splitPaths(s string) []string {

@@ -44,6 +44,7 @@ type model struct {
 	activeStyle      lipgloss.Style
 	footerStyle      lipgloss.Style
 	panelStyle       lipgloss.Style
+	currentRunCmd    tea.Cmd
 }
 
 type streamLineMsg struct {
@@ -61,6 +62,12 @@ type Category struct {
 	ID    int
 	Title string
 	Help  string
+}
+
+var registry *action.Registry
+
+func actionRegistryGet(name string) (*action.ActionDef, bool) {
+	return action.DefaultRegistry.Get(name)
 }
 
 var categories = []Category{
@@ -128,10 +135,6 @@ func initialModel() model {
 	}
 }
 
-func actionRegistryGet(name string) (*action.ActionDef, bool) {
-	return nil, false
-}
-
 func (m model) Init() tea.Cmd { return nil }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -183,14 +186,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			case "enter":
-				m.currentCategory = m.selectedCategory
-				if items, ok := itemsByCategory[m.currentCategory]; ok {
-					m.items = items
-				} else {
-				}
-				m.cursor = 0
 				m.mode = "verbs"
-				m.input.Placeholder = "Advanced / raw command (optional)"
+				m.cursor = 0
+				actions := action.DefaultRegistry.List()
+				var list []string
+				for _, a := range actions {
+					if a.Category == m.selectedCategory {
+						list = append(list, a.Name)
+					}
+				}
+				if len(list) == 0 {
+					for _, a := range actions {
+						list = append(list, a.Name)
+					}
+				}
+				m.items = list
 				return m, nil
 			case "esc":
 				return m, nil
@@ -307,6 +317,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.runCancel = cancel
 					m.streamLines = nil
 					m.mode = "running"
+					m.runCancel = cancel
+					m.currentRunCmd = cmd
 					m.running = true
 					return m, cmd
 				}
@@ -331,6 +343,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.runCancel = cancel
 					m.streamLines = nil
 					m.mode = "running"
+					m.currentRunCmd = cmdRun
 					m.running = true
 					return m, cmdRun
 				}
@@ -346,7 +359,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.input, cmd = m.input.Update(msg)
 			if k == "enter" {
 				raw := strings.TrimSpace(m.input.Value())
-				if raw != "" {
+				if strings.TrimSpace(m.input.Value()) != "" {
 					fields := strings.Fields(raw)
 					if fields[0] == "git" {
 						fields = fields[1:]
@@ -355,6 +368,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.runCancel = cancel
 					m.streamLines = nil
 					m.mode = "running"
+					m.currentRunCmd = cmdRun
 					m.running = true
 					return m, cmdRun
 				}
@@ -364,11 +378,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case streamLineMsg:
 		m.streamLines = append(m.streamLines, msg.Line)
+		if m.currentRunCmd != nil {
+			return m, m.currentRunCmd
+		}
 		return m, nil
 
 	case actionDoneMsg:
 		m.running = false
 		m.mode = "preview"
+		m.currentRunCmd = nil
+		m.runCancel = nil
 		if strings.TrimSpace(msg.Out) != "" {
 			m.statusLines = append(m.statusLines, strings.Split(msg.Out, "\n")...)
 		}
@@ -445,17 +464,46 @@ func (m model) renderVerbsPane() string {
 }
 
 func (m model) renderWizard() string {
-	if m.currentAction == nil || m.promptIndex >= len(m.currentAction.Prompts) {
-		return lipgloss.NewStyle().Width(40).Render("(no prompts)")
+	if m.currentAction == nil {
+		return lipgloss.NewStyle().Render("(no action selected)")
+	}
+	if len(m.currentAction.Prompts) == 0 {
+		return lipgloss.NewStyle().Render("(no prompts for this action)")
 	}
 	p := m.currentAction.Prompts[m.promptIndex]
 	hdr := lipgloss.NewStyle().Bold(true).Render("Prompt")
-	label := fmt.Sprintf("%s", p.Label)
+	label := p.Label
 	def := ""
 	if p.Default != "" {
 		def = fmt.Sprintf(" (default: %s)", p.Default)
 	}
-	return lipgloss.JoinVertical(lipgloss.Left, hdr, label+def, m.input.View())
+	tempInputs := make(action.ActionInput)
+	for k, v := range m.wizardInputs {
+		tempInputs[k] = v
+	}
+	if strings.TrimSpace(m.input.Value()) != "" {
+		tempInputs[p.Key] = strings.TrimSpace(m.input.Value())
+	}
+
+	previewLines := []string{}
+	if m.currentAction != nil {
+		previewLines = m.currentAction.Preview(tempInputs)
+	}
+
+	previewHdr := lipgloss.NewStyle().Bold(true).Render("Preview")
+	previewText := "(no preview)"
+	if len(previewLines) > 0 {
+		previewText = strings.Join(previewLines, "\n")
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		hdr,
+		label+def,
+		m.input.View(),
+		"",
+		previewHdr,
+		previewText,
+	)
 }
 
 func (m model) renderPreview() string {
@@ -526,34 +574,35 @@ func intMax(a, b int) int {
 func runActionCmdWithCancel(cmdName string, args []string) (tea.Cmd, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	return func() tea.Msg {
-		lineCh := make(chan streamLineMsg, 512)
-		doneCh := make(chan actionDoneMsg, 1)
+	lineCh := make(chan streamLineMsg, 512)
+	doneCh := make(chan actionDoneMsg, 1)
 
-		go func() {
-			runner := &execpkg.Runner{}
-			exit, out, errOut, err := runner.Run(ctx, cmdName, args, func(line string, isErr bool) {
-				select {
-				case lineCh <- streamLineMsg{Line: line, IsErr: isErr}:
-				default:
-				}
-			}, 0)
-			doneCh <- actionDoneMsg{Exit: exit, Out: out, ErrOut: errOut, Err: err}
-			close(lineCh)
-		}()
-
-		for {
+	go func() {
+		runner := &execpkg.Runner{}
+		exit, out, errOut, err := runner.Run(ctx, cmdName, args, func(line string, isErr bool) {
 			select {
-			case l, ok := <-lineCh:
-				if !ok {
-					return <-doneCh
-				}
-				return l
-			case d := <-doneCh:
-				return d
+			case lineCh <- streamLineMsg{Line: line, IsErr: isErr}:
+			default:
 			}
+		}, 0)
+
+		doneCh <- actionDoneMsg{Exit: exit, Out: out, ErrOut: errOut, Err: err}
+		close(lineCh)
+	}()
+
+	cmd := func() tea.Msg {
+		select {
+		case l, ok := <-lineCh:
+			if !ok {
+				return <-doneCh
+			}
+			return l
+		case d := <-doneCh:
+			return d
 		}
-	}, cancel
+	}
+
+	return cmd, cancel
 }
 
 func (m *model) focusHandleInputStart() {
@@ -570,6 +619,7 @@ func main() {
 			_ = windows.OpenBrowser(windows.OpenDownloadURL())
 		}
 	}
+	action.RegisterBuiltins(action.DefaultRegistry)
 
 	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	if err := p.Start(); err != nil {
