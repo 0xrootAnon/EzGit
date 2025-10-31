@@ -118,7 +118,6 @@ func initialModel() model {
 			"branch",
 			"merge",
 			"rebase",
-			"raw",
 		},
 		cursor:           0,
 		selectedCategory: 0,
@@ -457,7 +456,7 @@ func (m model) renderVerbsPane() string {
 	}
 	input := ""
 	if m.input.Focused() || m.input.Value() != "" {
-		input = "\n\n" + lipgloss.NewStyle().Bold(true).Render("Advanced / Raw:") + "\n" + m.input.View()
+		input = "\n\n" + lipgloss.NewStyle().Bold(true).Render("Advanced:") + "\n" + m.input.View()
 	}
 	body := lipgloss.JoinVertical(lipgloss.Left, strings.Join(lines, "\n"), input)
 	return lipgloss.NewStyle().Width(40).Render(body)

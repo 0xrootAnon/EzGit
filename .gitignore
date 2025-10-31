@@ -13,3 +13,8 @@ vendor/
 .DS_Store
 Thumbs.db
 ezgit
+layers.txt
+cmds.txt
+verbs.txt
+bugs.txt
+combos.json
