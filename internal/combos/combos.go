@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 )
 
@@ -27,14 +28,16 @@ type FlagDef struct {
 }
 
 type CommandSpec struct {
-	ActionKey   string    `json:"action_key"`
-	Name        string    `json:"name"`
-	Category    string    `json:"category"`
-	Description string    `json:"description"`
-	Forms       []string  `json:"forms"`
-	Flags       []FlagDef `json:"flags"`
-	Notes       string    `json:"notes"`
-	Safety      []string  `json:"safety"`
+	ActionKey     string    `json:"action_key"`
+	ActionAliases []string  `json:"action_aliases,omitempty"`
+	Name          string    `json:"name"`
+	DisplayName   string    `json:"display_name,omitempty"`
+	Category      string    `json:"category"`
+	Description   string    `json:"description"`
+	Forms         []string  `json:"forms"`
+	Flags         []FlagDef `json:"flags"`
+	Notes         string    `json:"notes"`
+	Safety        []string  `json:"safety"`
 }
 
 type CombosFile struct {
@@ -44,6 +47,7 @@ type CombosFile struct {
 var (
 	mu        sync.RWMutex
 	actionMap = map[string]CommandSpec{}
+	aliasMap  = map[string]string{}
 )
 
 func LoadFromFile(path string) (*CombosFile, error) {
@@ -73,12 +77,42 @@ func Register(doc *CombosFile) {
 	defer mu.Unlock()
 	for _, c := range doc.Commands {
 		actionMap[c.ActionKey] = c
+		for _, al := range c.ActionAliases {
+			aliasMap[strings.ToLower(al)] = c.ActionKey
+		}
+		if c.Name != "" {
+			aliasMap[strings.ToLower(c.Name)] = c.ActionKey
+		}
 	}
 }
 
 func Get(actionKey string) (CommandSpec, bool) {
 	mu.RLock()
 	defer mu.RUnlock()
-	v, ok := actionMap[actionKey]
-	return v, ok
+	if v, ok := actionMap[actionKey]; ok {
+		return v, true
+	}
+	lk := strings.ToLower(actionKey)
+	if ak, ok := aliasMap[lk]; ok {
+		if v, ok2 := actionMap[ak]; ok2 {
+			return v, true
+		}
+	}
+	for k, v := range actionMap {
+		if strings.EqualFold(k, actionKey) {
+			return v, true
+		}
+	}
+	return CommandSpec{}, false
+}
+
+func RegisteredKeys() []string {
+	mu.RLock()
+	defer mu.RUnlock()
+	keys := make([]string, 0, len(actionMap))
+	for k := range actionMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
