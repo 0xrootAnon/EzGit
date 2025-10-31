@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"ezgit/internal/combos"
 	"fmt"
 	"os"
 	"strings"
@@ -45,6 +46,7 @@ type model struct {
 	footerStyle      lipgloss.Style
 	panelStyle       lipgloss.Style
 	currentRunCmd    tea.Cmd
+	comboInputs      map[string]*textinput.Model
 }
 
 type streamLineMsg struct {
@@ -225,7 +227,36 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.wizardInputs = make(action.ActionInput)
 					m.promptIndex = 0
 					m.input.SetValue("")
-					m.mode = "wizard"
+
+					if spec, ok := combos.Get(a.Name); ok {
+						if m.comboInputs == nil {
+							m.comboInputs = make(map[string]*textinput.Model)
+						}
+						for _, f := range spec.Flags {
+							if f.ManualOnly {
+								if _, exists := m.comboInputs[f.ParamKey]; !exists {
+									ti := textinput.New()
+									ti.Placeholder = f.Example
+									ti.CharLimit = 512
+									ti.Width = 36
+									ti.Prompt = ""
+									if f.Default != nil {
+										ti.SetValue(fmt.Sprintf("%v", f.Default))
+									}
+									ti.Blur()
+									m.comboInputs[f.ParamKey] = &ti
+								}
+							}
+						}
+
+						m.mode = "preview"
+						m.input.Blur()
+					} else if len(a.Prompts) == 0 {
+						m.mode = "preview"
+						m.input.Blur()
+					} else {
+						m.mode = "wizard"
+					}
 				} else {
 					a := &action.ActionDef{
 						Name: name,
@@ -283,6 +314,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if k == "enter" {
 				if m.currentAction == nil || m.promptIndex >= len(m.currentAction.Prompts) {
 					m.mode = "preview"
+					m.input.Blur()
 					return m, cmd
 				}
 				p := m.currentAction.Prompts[m.promptIndex]
@@ -291,6 +323,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.promptIndex++
 				if m.promptIndex >= len(m.currentAction.Prompts) {
 					m.mode = "preview"
+					m.input.Blur()
 				}
 			}
 			if k == "esc" {
@@ -348,6 +381,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.statusLines = append(m.statusLines, "[typed confirmation failed; aborting]")
 				m.mode = "preview"
+				m.input.Blur()
 				return m, nil
 			}
 			return m, cmd
@@ -385,6 +419,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case actionDoneMsg:
 		m.running = false
 		m.mode = "preview"
+		m.input.Blur()
 		m.currentRunCmd = nil
 		m.runCancel = nil
 		if strings.TrimSpace(msg.Out) != "" {
@@ -508,16 +543,115 @@ func (m model) renderWizard() string {
 func (m model) renderPreview() string {
 	hdr := lipgloss.NewStyle().Bold(true).Render("Preview")
 	lines := []string{hdr}
-	if m.currentAction != nil {
-		previews := m.currentAction.Preview(m.wizardInputs)
-		for _, v := range previews {
-			lines = append(lines, v)
+
+	if m.currentAction == nil {
+		lines = append(lines, "(no action selected)")
+		return lipgloss.NewStyle().Width(40).Render(strings.Join(lines, "\n"))
+	}
+
+	if spec, ok := combos.Get(m.currentAction.Name); ok {
+		if m.comboInputs == nil {
+			m.comboInputs = make(map[string]*textinput.Model)
 		}
+
+		lines = append(lines, "")
+		lines = append(lines, "Available flags & parameters:")
+		lines = append(lines, "")
+
+		previewParts := []string{"git", m.currentAction.Name}
+
+		for _, f := range spec.Flags {
+			badge := "(read-only)"
+			if f.ManualOnly {
+				badge = "(editable)"
+				if _, exists := m.comboInputs[f.ParamKey]; !exists {
+					ti := textinput.New()
+					ti.Placeholder = f.Example
+					ti.CharLimit = 512
+					ti.Width = 36
+					ti.Prompt = ""
+					if f.Default != nil {
+						ti.SetValue(fmt.Sprintf("%v", f.Default))
+					}
+					ti.Blur()
+					m.comboInputs[f.ParamKey] = &ti
+				}
+			}
+
+			displayVal := "<unset>"
+			if f.ManualOnly {
+				if ti, ok := m.comboInputs[f.ParamKey]; ok {
+					v := (*ti).Value()
+					if strings.TrimSpace(v) != "" {
+						displayVal = v
+					} else if f.Default != nil {
+						displayVal = fmt.Sprintf("%v", f.Default)
+					}
+				} else if f.Default != nil {
+					displayVal = fmt.Sprintf("%v", f.Default)
+				}
+			} else {
+				if f.Default != nil {
+					displayVal = fmt.Sprintf("%v", f.Default)
+				} else {
+					displayVal = "(flag)"
+				}
+			}
+
+			lines = append(lines, fmt.Sprintf(" %s — %s : %s %s", f.Key, f.Label, displayVal, badge))
+
+			if f.ManualOnly {
+				if ti, ok := m.comboInputs[f.ParamKey]; ok {
+					lines = append(lines, "    "+(*ti).View())
+					val := strings.TrimSpace((*ti).Value())
+					if val != "" {
+						if f.Type == "bool" || f.Type == "boolean" {
+							if val == "true" || val == "1" {
+								previewParts = append(previewParts, f.Key)
+							}
+						} else {
+							if strings.HasPrefix(f.Key, "-") {
+								previewParts = append(previewParts, f.Key, val)
+							} else {
+								previewParts = append(previewParts, val)
+							}
+						}
+					}
+				}
+			} else {
+				if f.Default != nil {
+					if strings.HasPrefix(f.Key, "-") {
+						previewParts = append(previewParts, f.Key, fmt.Sprintf("%v", f.Default))
+					} else {
+						previewParts = append(previewParts, fmt.Sprintf("%v", f.Default))
+					}
+				}
+			}
+
+		}
+
 		if m.currentAction.IsDestructive != nil && m.currentAction.IsDestructive(m.wizardInputs) {
-			lines = append(lines, "", "[This operation is DESTRUCTIVE. Press Enter → typed confirmation required]")
+			lines = append(lines, "")
+			lines = append(lines, "[This operation is DESTRUCTIVE. Press Enter → typed confirmation required]")
 		} else {
-			lines = append(lines, "", "[Press Enter to Run, Esc to go back]")
+			lines = append(lines, "")
+			lines = append(lines, "[Press Enter to Run, Esc to go back]")
 		}
+
+		lines = append(lines, "")
+		lines = append(lines, "Preview: "+strings.Join(previewParts, " "))
+
+		return lipgloss.NewStyle().Width(40).Render(strings.Join(lines, "\n"))
+	}
+
+	previews := m.currentAction.Preview(m.wizardInputs)
+	for _, v := range previews {
+		lines = append(lines, v)
+	}
+	if m.currentAction.IsDestructive != nil && m.currentAction.IsDestructive(m.wizardInputs) {
+		lines = append(lines, "", "[This operation is DESTRUCTIVE. Press Enter → typed confirmation required]")
+	} else {
+		lines = append(lines, "", "[Press Enter to Run, Esc to go back]")
 	}
 	return lipgloss.NewStyle().Width(40).Render(strings.Join(lines, "\n"))
 }
@@ -616,6 +750,31 @@ func main() {
 		fmt.Scanln(&resp)
 		if strings.ToLower(strings.TrimSpace(resp)) == "y" {
 			_ = windows.OpenBrowser(windows.OpenDownloadURL())
+		}
+	}
+	if dir, err := os.Getwd(); err == nil {
+		fmt.Println("Working dir:", dir)
+	} else {
+		fmt.Println("Warning: failed to get working dir:", err)
+	}
+
+	const combosPath = "combos_updated.json"
+	if doc, err := combos.LoadFromFile(combosPath); err == nil {
+		combos.Register(doc)
+		fmt.Println("Loaded combos_updated.json: enhanced Layer-3 preview enabled")
+		fmt.Println("---- combos: verifying action_key -> registered action map ----")
+		for _, c := range doc.Commands {
+			fmt.Printf("combo available for action_key=%q\n", c.ActionKey)
+		}
+		fmt.Println("---- end combos verification ----")
+	} else {
+		fmt.Printf("combos: failed to load %s: %v\n", combosPath, err)
+		if doc2, err2 := combos.LoadFromFile("combos.json"); err2 == nil {
+			combos.Register(doc2)
+			fmt.Println("Loaded combos.json: enhanced Layer-3 preview enabled")
+		} else {
+			fmt.Printf("combos: failed to load fallback combos.json: %v\n", err2)
+			fmt.Println("combos: continuing without combos metadata (no UI change).")
 		}
 	}
 	action.RegisterBuiltins(action.DefaultRegistry)
