@@ -30,7 +30,7 @@ type model struct {
 	cursor           int
 	selectedCategory int
 	currentCategory  int
-	mode             string
+	mode             string // fuck these categories
 	quitting         bool
 	currentAction    *action.ActionDef
 	wizardInputs     action.ActionInput
@@ -92,23 +92,23 @@ var categories = []Category{
 }
 
 var itemsByCategory = map[int][]string{
-	0: {
+	0: { //fuck you
 		"Create repo", "Clone repo", "Export snapshot", "Apply bundle", "Show history", "Show commit",
 		"Search", "Blame", "Commits by author", "Describe",
 	},
-	1: {
+	1: { //fuck you
 		"Stage files", "Unstage/Restore", "Rename/Move file", "Commit", "Status", "Diff", "Clean workspace",
 	},
-	2: {
+	2: { //fuck you
 		"Create branch", "Switch branch", "Merge branch", "Rebase", "Tag release", "Manage worktrees",
 	},
-	3: {
+	3: { //fuck you
 		"Revert commit", "Reset (soft/mixed/hard)", "Reflog", "Bisect", "Cherry-pick", "Format patch", "Rewrite history",
 	},
-	4: {
+	4: { //fuck uou too
 		"Manage remote", "Fetch", "Pull", "Push", "Show remote refs", "Credentials", "Submodules",
 	},
-	5: {
+	5: { //fuck the fucking lot of you
 		"Stash", "Apply stash", "Pop stash", "List stashes", "FSCK", "GC", "Prune", "Verify packs",
 	},
 }
