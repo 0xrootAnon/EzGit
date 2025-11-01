@@ -196,7 +196,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tea.KeyMsg:
 		k := msg.String()
-
 		if k == "q" || k == "ctrl+c" {
 			if m.runCancel != nil && m.mode == "running" {
 				m.runCancel()
@@ -446,20 +445,66 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							m.previewSelected++
 						}
 						return m, nil
-					case "space", " ":
-						idx := m.previewSelected
-						if idx >= 0 && idx < len(visible) {
-							f := visible[idx]
-							if !f.ManualOnly {
-								m.includedFlags[f.ParamKey] = !m.includedFlags[f.ParamKey]
+					case " ", "space":
+
+						visible := make([]combos.FlagDef, 0, len(spec.Flags))
+						for _, f := range spec.Flags {
+							if f.Advanced && !m.advancedVisible {
+								continue
 							}
+							visible = append(visible, f)
 						}
+						if len(visible) == 0 {
+							return m, nil
+						}
+						if m.previewSelected < 0 || m.previewSelected >= len(visible) {
+							return m, nil
+						}
+
+						f := visible[m.previewSelected]
+						if f.ManualOnly {
+
+							if m.comboInputs == nil {
+								m.comboInputs = make(map[string]*textinput.Model)
+							}
+							if _, exists := m.comboInputs[f.ParamKey]; !exists {
+								t := textinput.New()
+								t.Placeholder = f.Example
+								t.CharLimit = 512
+								t.Width = 36
+								t.Prompt = ""
+								if f.Default != nil {
+									t.SetValue(fmt.Sprintf("%v", f.Default))
+								}
+								t.Blur()
+								m.comboInputs[f.ParamKey] = &t
+							}
+
+							m.input.Blur()
+							if ti := m.comboInputs[f.ParamKey]; ti != nil {
+								(*ti).Focus()
+							}
+
+							m.editingParamKey = f.ParamKey
+							return m, nil
+						}
+
+						if m.includedFlags == nil {
+							m.includedFlags = map[string]bool{}
+						}
+						m.includedFlags[f.ParamKey] = !m.includedFlags[f.ParamKey]
 						return m, nil
-					case "e", "enter":
+					case "e":
+						if m.input.Focused() || m.editingParamKey != "" {
+							return m, nil
+						}
 						idx := m.previewSelected
 						if idx >= 0 && idx < len(visible) {
 							f := visible[idx]
 							if f.ManualOnly {
+								if m.comboInputs == nil {
+									m.comboInputs = make(map[string]*textinput.Model)
+								}
 								if _, exists := m.comboInputs[f.ParamKey]; !exists {
 									t := textinput.New()
 									t.Placeholder = f.Example
@@ -472,19 +517,22 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 									t.Blur()
 									m.comboInputs[f.ParamKey] = &t
 								}
-								cur := ""
+
 								if ti := m.comboInputs[f.ParamKey]; ti != nil {
-									cur = (*ti).Value()
+									(*ti).SetValue((*ti).Value())
+									(*ti).Focus()
 								}
-								m.input.SetValue(cur)
-								m.input.Placeholder = f.Example
-								m.input.Focus()
+								m.input.Blur()
+
 								m.editingParamKey = f.ParamKey
-								m.mode = "preview-edit"
 								return m, nil
 							}
 						}
 						return m, nil
+
+					case "enter":
+
+						return m.previewEnterHandler(spec)
 					case "a":
 						m.advancedVisible = !m.advancedVisible
 						if m.previewSelected >= len(visible) {
@@ -492,35 +540,47 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						}
 						return m, nil
 					case "esc":
-						m.mode = "wizard"
+						m.mode = "verbs"
 						return m, nil
 					}
 					return m, nil
 				}
+
 				var cmd tea.Cmd
-				m.input, cmd = m.input.Update(msg)
-				kLower := strings.ToLower(k)
-				if kLower == "enter" {
-					if m.editingParamKey != "" {
-						val := strings.TrimSpace(m.input.Value())
-						if _, ok2 := m.comboInputs[m.editingParamKey]; !ok2 {
-							t := textinput.New()
-							m.comboInputs[m.editingParamKey] = &t
-						}
-						(*m.comboInputs[m.editingParamKey]).SetValue(val)
+				if m.editingParamKey != "" {
+					if tiPtr, ok := m.comboInputs[m.editingParamKey]; ok && tiPtr != nil {
+
+						t := *tiPtr
+						t, cmd = t.Update(msg)
+						*tiPtr = t
+					} else {
+
+						m.input, cmd = m.input.Update(msg)
 					}
-					m.editingParamKey = ""
-					m.mode = "preview"
-					m.input.Blur()
+
+					kLower := strings.ToLower(k)
+					if kLower == "enter" {
+
+						if ti := m.comboInputs[m.editingParamKey]; ti != nil {
+							v := strings.TrimSpace((*ti).Value())
+							(*ti).SetValue(v)
+							(*ti).Blur()
+						}
+						m.editingParamKey = ""
+
+						return m, cmd
+					}
+					if kLower == "esc" {
+
+						if ti := m.comboInputs[m.editingParamKey]; ti != nil {
+							(*ti).Blur()
+						}
+						m.editingParamKey = ""
+						return m, cmd
+					}
 					return m, cmd
 				}
-				if kLower == "esc" {
-					m.editingParamKey = ""
-					m.mode = "preview"
-					m.input.Blur()
-					return m, cmd
-				}
-				return m, cmd
+
 			}
 			switch k {
 			case "enter":
@@ -551,26 +611,54 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.mode == "preview-edit" {
 			var cmd tea.Cmd
-			m.input, cmd = m.input.Update(msg)
-			if k == "enter" {
+
+			if m.editingParamKey != "" {
+				if tiPtr, ok := m.comboInputs[m.editingParamKey]; ok && tiPtr != nil {
+
+					t := *tiPtr
+					t, cmd = t.Update(msg)
+					*tiPtr = t
+				} else {
+
+					m.input, cmd = m.input.Update(msg)
+				}
+			} else {
+
+				m.input, cmd = m.input.Update(msg)
+			}
+
+			kLower := strings.ToLower(k)
+			if kLower == "enter" {
 				if m.editingParamKey != "" {
-					val := strings.TrimSpace(m.input.Value())
+
 					if _, ok := m.comboInputs[m.editingParamKey]; !ok {
 						t := textinput.New()
 						t.Placeholder = ""
 						m.comboInputs[m.editingParamKey] = &t
 					}
-					(*m.comboInputs[m.editingParamKey]).SetValue(val)
-					m.editingParamKey = ""
-					m.mode = "preview"
-					m.input.Blur()
+
+					if ti := m.comboInputs[m.editingParamKey]; ti != nil {
+						v := strings.TrimSpace((*ti).Value())
+						(*ti).SetValue(v)
+					}
+
+					if ti := m.comboInputs[m.editingParamKey]; ti != nil {
+						(*ti).Blur()
+					}
 				}
-				return m, cmd
-			}
-			if k == "esc" {
 				m.editingParamKey = ""
 				m.mode = "preview"
-				m.input.Blur()
+				return m, cmd
+			}
+			if kLower == "esc" {
+
+				if m.editingParamKey != "" {
+					if ti := m.comboInputs[m.editingParamKey]; ti != nil {
+						(*ti).Blur()
+					}
+				}
+				m.editingParamKey = ""
+				m.mode = "preview"
 				return m, cmd
 			}
 			return m, cmd
@@ -688,18 +776,47 @@ func (m *model) previewEnterHandler(spec combos.CommandSpec) (tea.Model, tea.Cmd
 	if len(m.validationErrors) > 0 {
 		return m, nil
 	}
+
+	m.wizardInputs = make(action.ActionInput)
 	for _, f := range spec.Flags {
 		if f.ManualOnly {
 			if ti, ok := m.comboInputs[f.ParamKey]; ok {
 				m.wizardInputs[f.ParamKey] = strings.TrimSpace((*ti).Value())
 			}
-		} else {
-			if m.includedFlags[f.ParamKey] {
-				if f.Default != nil {
-					m.wizardInputs[f.ParamKey] = fmt.Sprintf("%v", f.Default)
-				} else {
-					m.wizardInputs[f.ParamKey] = "true"
+			continue
+		}
+
+		if !m.includedFlags[f.ParamKey] {
+			continue
+		}
+
+		isBool := false
+		if strings.ToLower(f.Type) == "bool" {
+			isBool = true
+		}
+
+		if f.Default != nil {
+			switch dv := f.Default.(type) {
+			case bool:
+				isBool = true
+			case float64:
+
+				if dv == 0.0 || dv == 1.0 {
+					isBool = true
 				}
+			}
+		}
+
+		if isBool {
+
+			m.wizardInputs[f.ParamKey] = "true"
+		} else {
+
+			if f.Default != nil {
+				m.wizardInputs[f.ParamKey] = fmt.Sprintf("%v", f.Default)
+			} else {
+
+				m.wizardInputs[f.ParamKey] = "true"
 			}
 		}
 	}
@@ -928,13 +1045,36 @@ func (m model) renderPreview() string {
 		leftCol := fmt.Sprintf("%-*s", leftWidth, left)
 		displayVal := ""
 		if f.ManualOnly {
+
 			if ti, ok := m.comboInputs[f.ParamKey]; ok {
 				displayVal = strings.TrimSpace((*ti).Value())
+
 				if displayVal == "" && f.Default != nil {
-					displayVal = fmt.Sprintf("%v", f.Default)
+
+					switch f.Default.(type) {
+					case bool:
+
+						if f.Label != "" {
+							displayVal = f.Label
+						} else {
+							displayVal = "<unset>"
+						}
+					default:
+						displayVal = fmt.Sprintf("%v", f.Default)
+					}
 				}
 			} else if f.Default != nil {
-				displayVal = fmt.Sprintf("%v", f.Default)
+
+				switch f.Default.(type) {
+				case bool:
+					if f.Label != "" {
+						displayVal = f.Label
+					} else {
+						displayVal = "<unset>"
+					}
+				default:
+					displayVal = fmt.Sprintf("%v", f.Default)
+				}
 			} else {
 				displayVal = "<unset>"
 			}
@@ -949,12 +1089,23 @@ func (m model) renderPreview() string {
 		if f.ManualOnly {
 			rightParts = append(rightParts, valueStyle.Render(displayVal), "✎")
 		} else {
+
 			if m.includedFlags[f.ParamKey] {
 				rightParts = append(rightParts, checkOn)
 			} else {
 				rightParts = append(rightParts, checkOff)
 			}
-			rightParts = append(rightParts, valueStyle.Render(displayVal))
+
+			displayLabel := ""
+			isBool := strings.ToLower(f.Type) == "bool"
+			if !isBool && f.Default != nil {
+				displayLabel = fmt.Sprintf("%v", f.Default)
+			} else if f.Label != "" {
+				displayLabel = f.Label
+			}
+			if displayLabel != "" {
+				rightParts = append(rightParts, valueStyle.Render(displayLabel))
+			}
 		}
 		if f.Advanced {
 			rightParts = append(rightParts, advBadge)
@@ -970,6 +1121,38 @@ func (m model) renderPreview() string {
 		} else {
 			lines = append(lines, m.itemStyle.Render(line))
 		}
+
+		if m.mode == "preview-edit" && m.editingParamKey == f.ParamKey && m.input.Prompt != "" {
+
+			if ti := m.comboInputs[f.ParamKey]; ti != nil {
+				lines = append(lines, "    "+(*ti).View())
+			} else {
+				if ti := m.comboInputs[f.ParamKey]; ti != nil {
+					lines = append(lines, "    "+(*ti).View())
+				} else {
+					lines = append(lines, "    "+m.input.View())
+				}
+			}
+
+			if errMsg, ok := m.validationErrors[m.editingParamKey]; ok && errMsg != "" {
+				lines = append(lines, "    "+errStyle.Render("Error: "+errMsg))
+			}
+		} else if m.mode == "preview-edit" && m.editingParamKey == f.ParamKey {
+
+			if ti := m.comboInputs[f.ParamKey]; ti != nil {
+				lines = append(lines, "    "+(*ti).View())
+			} else {
+				if ti := m.comboInputs[f.ParamKey]; ti != nil {
+					lines = append(lines, "    "+(*ti).View())
+				} else {
+					lines = append(lines, "    "+m.input.View())
+				}
+			}
+			if errMsg, ok := m.validationErrors[m.editingParamKey]; ok && errMsg != "" {
+				lines = append(lines, "    "+errStyle.Render("Error: "+errMsg))
+			}
+		}
+
 	}
 	hasAdvanced := false
 	for _, f := range spec.Flags {
@@ -987,14 +1170,17 @@ func (m model) renderPreview() string {
 	}
 	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("[↑/↓] select • [space] toggle (read-only) • [e/enter] edit • [a] adv • [esc] back")
 	lines = append(lines, "", help)
-	if m.mode == "preview-edit" {
-		lines = append(lines, "", lipgloss.NewStyle().Bold(true).Render("Edit value:"), m.input.View())
-		if m.editingParamKey != "" {
-			if errMsg, ok := m.validationErrors[m.editingParamKey]; ok && errMsg != "" {
-				lines = append(lines, "    "+errStyle.Render("Error: "+errMsg))
-			}
+	if m.editingParamKey != "" {
+		if ti := m.comboInputs[m.editingParamKey]; ti != nil {
+			lines = append(lines, "", lipgloss.NewStyle().Bold(true).Render("Edit value:"), (*ti).View())
+		} else {
+			lines = append(lines, "", lipgloss.NewStyle().Bold(true).Render("Edit value:"), m.input.View())
+		}
+		if errMsg, ok := m.validationErrors[m.editingParamKey]; ok && errMsg != "" {
+			lines = append(lines, "    "+errStyle.Render("Error: "+errMsg))
 		}
 	}
+
 	previewParts := []string{"git", m.currentAction.Name}
 	for _, f := range visible {
 		if f.ManualOnly {
@@ -1015,16 +1201,43 @@ func (m model) renderPreview() string {
 				}
 			}
 		} else {
-			if m.includedFlags[f.ParamKey] {
-				if f.Default != nil {
-					if strings.HasPrefix(f.Key, "-") {
-						previewParts = append(previewParts, f.Key, fmt.Sprintf("%v", f.Default))
-					} else {
-						previewParts = append(previewParts, fmt.Sprintf("%v", f.Default))
-					}
+			if !m.includedFlags[f.ParamKey] {
+
+				continue
+			}
+
+			isBool := false
+			if strings.ToLower(f.Type) == "bool" {
+				isBool = true
+			} else if f.Default != nil {
+				switch f.Default.(type) {
+				case bool:
+					isBool = true
+				}
+			}
+
+			if isBool {
+
+				previewParts = append(previewParts, f.Key)
+				continue
+			}
+
+			if f.Default != nil {
+				if strings.HasPrefix(f.Key, "-") {
+					previewParts = append(previewParts, f.Key, fmt.Sprintf("%v", f.Default))
+				} else {
+					previewParts = append(previewParts, fmt.Sprintf("%v", f.Default))
+				}
+			} else if f.ParamKey != "" {
+
+				if strings.HasPrefix(f.Key, "-") {
+					previewParts = append(previewParts, f.Key)
 				} else {
 					previewParts = append(previewParts, f.Key)
 				}
+			} else {
+
+				previewParts = append(previewParts, f.Key)
 			}
 		}
 	}
