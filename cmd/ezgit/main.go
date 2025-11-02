@@ -25,6 +25,12 @@ const (
 	focusRun
 )
 
+const asciiHeader = `
+┏━╸╺━┓┏━╸╻╺┳╸
+┣╸ ┏━┛┃╺┓┃ ┃ 
+┗━╸┗━╸┗━┛╹ ╹ 
+`
+
 type model struct {
 	items            []string
 	cursor           int
@@ -897,8 +903,8 @@ func (m *model) View() string {
 		return ""
 	}
 
-	head := m.headStyle.Render("EzGit by 0xrootAnon")
-	help := m.footerStyle.Render("Arrows: move • Enter: select • Type: start typing • Esc: back • q: quit • PgUp/PgDn: scroll output")
+	head := m.headStyle.Render(asciiHeader)
+	help := m.footerStyle.Render("Arrows: move • Enter: select • Esc: back • q: quit • PgUp/PgDn: scroll output")
 
 	var left string
 	switch m.mode {
@@ -1208,7 +1214,7 @@ func (m model) renderPreview() string {
 		}
 	}
 
-	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("[↑/↓] select • [space] toggle • [e/enter] edit • [a] adv • [esc] back")
+	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("[↑/↓] select • [space] toggle/input • [enter] execute • [a] adv • [esc] back")
 	lines = append(lines, "", help)
 
 	if m.editingParamKey != "" {

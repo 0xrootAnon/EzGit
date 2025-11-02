@@ -7,7 +7,7 @@ A fast, interactive, terminal UI that says "fuck git"
 ---
 
 ## Features
--  Clean and rich TUI powered by Bubbletea
+-  Clean and rich TUI 
 -  Keyboard shortcuts:
     - **Up/Down** → Navigate options
     - **Enter** → Select
