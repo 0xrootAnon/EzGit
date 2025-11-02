@@ -42,6 +42,7 @@ or grab prebuilt binaries from Releases.
 Git is powerful. But it was never designed for humans.
 Lazygit, GitUI, and friends are great for pros, **EzGit** is for the rest of us.
 For anyone who just wants to get things done without a 200-page mental model of Git.
+
 ---
 
 ## License
