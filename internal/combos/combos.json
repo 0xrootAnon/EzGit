@@ -1,0 +1,767 @@
+{
+  "_comment": "List of all daily-use flags and combinations for every real-world workflow pattern people actually run into",
+  "commands": [
+    {
+      "name": "git init",
+      "common_forms_and_flags": [
+        "git init — create repo in current directory (local)",
+        "git init <dir> — init in <dir>",
+        "git init --bare — bare repository (server)",
+        "git init --template=<dir> — use templates",
+        "git init --separate-git-dir=<gitdir> — repo with separate .git"
+      ],
+      "common_workflows": [
+        "mkdir proj && cd proj && git init — start local project",
+        "git init --bare /srv/git/repo.git — create server repo",
+        "After init: create .gitignore, git add ., git commit -m \"initial\""
+      ],
+      "notes": "--bare repos have no working tree; used for remotes."
+    },
+    {
+      "name": "git clone",
+      "common_forms_and_flags": [
+        "git clone <url> — basic clone",
+        "git clone <url> <dir> — clone into directory",
+        "git clone --branch <branch> <url> or -b <branch> — checkout branch",
+        "git clone --single-branch — only fetch specified branch",
+        "git clone --depth <n> — shallow clone",
+        "git clone --recursive or --recurse-submodules — initialize submodules",
+        "git clone --mirror <url> — mirror clone for bare backup",
+        "git clone --config core.autocrlf=true <url> — set config on clone",
+        "GIT_SSH_COMMAND='ssh -i key' git clone <url> — custom ssh key"
+      ],
+      "common_workflows": [
+        "git clone -b develop --single-branch git@host:org/repo.git — clone only develop",
+        "git clone --depth 1 <url> — quick shallow copy for CI",
+        "Clone then git checkout -b myfeature origin/main or git switch -c"
+      ],
+      "notes": "--depth reduces history; to fetch more history later: git fetch --unshallow or git fetch --depth=<n>."
+    },
+    {
+      "name": "git add",
+      "common_forms_and_flags": [
+        "git add <file> — stage file",
+        "git add . — stage all changed (in pwd)",
+        "git add -A — stage all changes (including deletions)",
+        "git add -u — stage tracked changes and deletions (no new files)",
+        "git add -p — interactive patch add (very common)",
+        "git add --intent-to-add <file> — record intent-to-add (index entry with no content)",
+        "git add --renormalize . — apply eol normalization"
+      ],
+      "common_workflows": [
+        "git add -p → selectively stage hunks before git commit",
+        "git add -A && git commit -m \"...\" — stage everything",
+        "git add <file> && git restore --staged <file> — stage then unstage"
+      ],
+      "notes": "Use git status --porcelain to see staged vs unstaged."
+    },
+    {
+      "name": "git mv",
+      "common_forms_and_flags": [
+        "git mv <old> <new> — move/rename tracked file(s)",
+        "git mv -k — allow failures"
+      ],
+      "common_workflows": [
+        "git mv file1.js dir/ && git commit -m \"move file1 to dir\"",
+        "If moving without git mv: mv old new && git add new && git rm old"
+      ],
+      "notes": "git mv is convenience: it stages move and removal."
+    },
+    {
+      "name": "git restore",
+      "common_forms_and_flags": [
+        "git restore <file> — restore file from HEAD (discard working tree changes)",
+        "git restore --staged <file> — unstage file (move from index to working tree)",
+        "git restore --source <ref> -- <path> — restore from given commit/ref",
+        "git restore -p — patch mode restore (interactive)",
+        "git restore --worktree --staged <file> — restore both index and working tree (rare)"
+      ],
+      "common_workflows": [
+        "git restore --staged file — move staged change back to unstaged",
+        "git restore --source origin/main -- file — undo local edits to match remote branch"
+      ],
+      "notes": "git restore replaces older patterns (git checkout -- file)."
+    },
+    {
+      "name": "git rm",
+      "common_forms_and_flags": [
+        "git rm <file> — remove from index and working tree",
+        "git rm --cached <file> — remove from index but keep file (stop tracking)",
+        "git rm -r <dir> — recursively remove",
+        "git rm -f <file> — force remove (if modified)"
+      ],
+      "common_workflows": [
+        "git rm --cached file && echo file >> .gitignore && git add .gitignore && git commit -m \"stop tracking file\"",
+        "git rm -r build/ && git commit -m \"remove build artifacts\""
+      ],
+      "notes": "--cached useful for removing secrets from tracking but leaving local copy."
+    },
+    {
+      "name": "git commit",
+      "common_forms_and_flags": [
+        "git commit -m \"message\" — one-line commit",
+        "git commit — opens editor for message",
+        "git commit -a -m \"msg\" — auto-stage tracked changes (does not add new files)",
+        "git commit --amend — amend last commit (change message or contents)",
+        "git commit -s — sign-off (DCO)",
+        "git commit --no-verify — skip pre-commit hooks",
+        "git commit --author=\"Name <email>\" — set author override",
+        "git commit --allow-empty -m \"...\" — create empty commit",
+        "git commit -v — verbose (shows diff in editor)",
+        "git commit --date=\"...\" — set commit date"
+      ],
+      "common_workflows": [
+        "git add -p && git commit -m \"fix: ...\" — selective staging + commit",
+        "git commit --amend --no-edit — add staged changes to previous commit without editing message",
+        "git commit --amend -m \"new message\" && git push --force-with-lease — change message already pushed (force-push needed)",
+        "git commit -a -m \"...\" && git push — common quick flow"
+      ],
+      "notes": "Amending and then force-pushing is common but requires care with shared branches (--force-with-lease safer)."
+    },
+    {
+      "name": "git status",
+      "common_forms_and_flags": [
+        "git status",
+        "git status -s or --short — compact output",
+        "git status --porcelain=2 — parseable output for scripts"
+      ],
+      "common_workflows": [
+        "git status before add/commit to see changes",
+        "git status -sb — shows branch and short status"
+      ],
+      "notes": "Use porcelain output in GUIs and scripts."
+    },
+    {
+      "name": "git diff",
+      "common_forms_and_flags": [
+        "git diff — unstaged changes vs working tree",
+        "git diff --staged or --cached — changes staged for commit",
+        "git diff <commit> — differences between working tree and commit",
+        "git diff <commit1> <commit2> or git diff <ref>..<ref> — commit-to-commit diffs",
+        "git diff --name-only — list changed files",
+        "git diff --name-status — show status (A/M/D)",
+        "git diff --stat — summary",
+        "git diff -U0 -W — context/generator for patching",
+        "git diff --color-words — word diff",
+        "git diff --no-index — diff files not in repo"
+      ],
+      "common_workflows": [
+        "git diff -> fix -> git add -p -> git commit",
+        "git diff origin/main..HEAD — show your changes compared to remote main",
+        "Use git diff --staged to verify staged content before git commit"
+      ],
+      "notes": "Good for generating patches: git diff > my.patch or git format-patch."
+    },
+    {
+      "name": "git log",
+      "common_forms_and_flags": [
+        "git log — full history",
+        "git log --oneline — compact single-line per commit",
+        "git log --graph --decorate --oneline — visual branch graph (very common)",
+        "git log -n <N> — last N commits",
+        "git log --author=\"Name\" — commits by author",
+        "git log --since=\"2 weeks ago\" / --until — time filtering",
+        "git log --stat — diffstat per commit",
+        "git log -p — patch per commit (show diffs)",
+        "git log --name-only — file list per commit",
+        "git log <branch1>..<branch2> — commits in branch2 but not branch1",
+        "git log --grep=\"regex\" — search commit messages",
+        "git log --pretty=format:\"%h %ad | %s%d [%an]\" --date=short — custom format"
+      ],
+      "common_workflows": [
+        "git log --graph --decorate --oneline --all — visualize all branches",
+        "git log origin/main..HEAD --oneline — local commits not pushed"
+      ],
+      "notes": "--oneline is widely used in UIs and CLI."
+    },
+    {
+      "name": "git show",
+      "common_forms_and_flags": [
+        "git show <commit> — show commit + diff",
+        "git show --name-only <commit> — list files changed",
+        "git show <commit>:path/to/file — view file at commit",
+        "git show --pretty=raw — raw object output",
+        "git show --stat — stats only"
+      ],
+      "common_workflows": [
+        "git show HEAD~2 — inspect earlier commit",
+        "git show origin/main:README.md — view remote file"
+      ],
+      "notes": "git show can inspect blobs/trees directly."
+    },
+    {
+      "name": "git branch",
+      "common_forms_and_flags": [
+        "git branch — list local branches",
+        "git branch -r — list remote branches",
+        "git branch -a — all branches",
+        "git branch <name> — create branch (without switching)",
+        "git branch -d <name> — delete branch (safe: refuses unmerged)",
+        "git branch -D <name> — force delete",
+        "git branch --move <old> <new> or git branch -m",
+        "git branch --contains <commit> — branches that contain commit",
+        "git branch --set-upstream-to=origin/<branch> <branch> — set upstream"
+      ],
+      "common_workflows": [
+        "git branch -b? (use git checkout -b or git switch -c instead)",
+        "git branch -d feature — delete merged branch",
+        "After push: git push origin --delete feature to remove remote"
+      ],
+      "notes": "-d safety prevents data loss."
+    },
+    {
+      "name": "git checkout",
+      "common_forms_and_flags": [
+        "git checkout <branch> — switch branch",
+        "git checkout -b <new> — create + switch (legacy; prefer git switch -c)",
+        "git checkout -- <file> — restore file from HEAD (legacy)",
+        "git checkout <commit> -- <file> — get file version from commit",
+        "git checkout --detach <commit> — check out a commit in detached HEAD"
+      ],
+      "common_workflows": [
+        "git checkout -b myfeature origin/main — create branch from remote",
+        "git checkout -- file — discard local edits to file"
+      ],
+      "notes": "Prefer git switch and git restore for clarity."
+    },
+    {
+      "name": "git switch",
+      "common_forms_and_flags": [
+        "git switch <branch> — switch",
+        "git switch -c <new> — create and switch",
+        "git switch --discard-changes <branch> — (older flags) usually --force to discard",
+        "git switch --detach <commit> — detached HEAD"
+      ],
+      "common_workflows": [
+        "git switch -c myfeature — start feature",
+        "git switch main && git pull — update main"
+      ],
+      "notes": "switch is clearer than checkout for branch switching."
+    },
+    {
+      "name": "git merge",
+      "common_forms_and_flags": [
+        "git merge <branch> — merge branch into current",
+        "git merge --no-ff <branch> — create merge commit even if fast-forward",
+        "git merge --ff-only <branch> — fail unless fast-forward",
+        "git merge --squash <branch> — prepare squashed changes without commit",
+        "git merge --abort — abort during conflict resolution",
+        "git merge --no-commit — don’t auto-commit merge result"
+      ],
+      "common_workflows": [
+        "git checkout main && git merge --no-ff feature-x — explicit merge commit",
+        "git merge --squash feature && git commit -m \"squashed changes\" — squash merge locally",
+        "git pull may run merge as part of fetch + merge"
+      ],
+      "notes": "When conflicts: edit files, git add resolved files, then git commit (or git merge --continue depending on state)."
+    },
+    {
+      "name": "git rebase",
+      "common_forms_and_flags": [
+        "git rebase <base> — reapply commits on top of <base>",
+        "git rebase -i <base> — interactive rebase (squash, fixup, reword)",
+        "git rebase --onto <newbase> <upstream> <branch> — advanced rewriting",
+        "git rebase --continue, --skip, --abort — during conflict resolution",
+        "git pull --rebase — fetch & rebase local commits onto updated upstream",
+        "git rebase -x \"cmd\" — run command after each commit (advanced)"
+      ],
+      "common_workflows": [
+        "git checkout feature && git rebase -i origin/main — clean up commits before merge/push",
+        "git pull --rebase origin main — keep linear local history"
+      ],
+      "notes": "Rewriting shared history requires force-push afterward: git push --force-with-lease."
+    },
+    {
+      "name": "git cherry-pick",
+      "common_forms_and_flags": [
+        "git cherry-pick <commit> — apply commit to current branch",
+        "git cherry-pick -x <commit> — add (cherry picked from ...) note (very common)",
+        "git cherry-pick -n <commit> — apply without committing",
+        "git cherry-pick --continue/--abort/--skip — conflict resolution"
+      ],
+      "common_workflows": [
+        "git cherry-pick -x abc123 — bring bugfix commit to release branch, keeping reference",
+        "git cherry-pick -n commit1 commit2 && git commit -m \"combined\" — combine picks into single commit"
+      ],
+      "notes": "Use -x for traceability."
+    },
+    {
+      "name": "git revert",
+      "common_forms_and_flags": [
+        "git revert <commit> — create new commit that undoes <commit>",
+        "git revert --no-edit — use default message and auto-commit",
+        "git revert -n — revert without committing (batch reverts)",
+        "git revert --mainline <parent-number> — revert a merge commit"
+      ],
+      "common_workflows": [
+        "git revert -m 1 <merge-commit> — undo a bad merge (mainline selection)",
+        "git revert <commit> && git push — safe undo on shared branch"
+      ],
+      "notes": "revert is the safe way to undo a commit already published."
+    },
+    {
+      "name": "git tag",
+      "common_forms_and_flags": [
+        "git tag — list tags",
+        "git tag -a v1.0 -m \"release v1.0\" — annotated tag (recommended)",
+        "git tag v1.0 <commit> — tag specific commit",
+        "git push origin --tags — push tags",
+        "git tag -d v1.0 and git push origin :refs/tags/v1.0 — delete local + remote tag",
+        "git show v1.0 — inspect tag"
+      ],
+      "common_workflows": [
+        "git tag -a v1.2.3 -m \"release notes\" && git push origin v1.2.3",
+        "Lightweight tag: git tag v1.2.3"
+      ],
+      "notes": "Use annotated tags for releases (include message, signing -s available)."
+    },
+    {
+      "name": "git fetch",
+      "common_forms_and_flags": [
+        "git fetch — fetch all remotes configured",
+        "git fetch origin — fetch from origin",
+        "git fetch --prune — remove tracking refs that no longer exist on remote",
+        "git fetch origin <branch> — fetch specific ref",
+        "git fetch --depth <n> — fetch shallow updates",
+        "git fetch --all — fetch all remotes"
+      ],
+      "common_workflows": [
+        "git fetch origin && git log ..origin/main — inspect remote changes before merge",
+        "git fetch --prune — clean stale remote branches"
+      ],
+      "notes": "fetch only updates local remote-tracking branches; you must merge/rebase/checkout to incorporate."
+    },
+    {
+      "name": "git pull",
+      "common_forms_and_flags": [
+        "git pull — fetch + merge (default)",
+        "git pull --rebase — fetch + rebase local commits",
+        "git pull --ff-only — only fast-forward (fail otherwise)",
+        "git pull origin main — specify remote/branch"
+      ],
+      "common_workflows": [
+        "git pull --rebase origin main — common to avoid merge commits",
+        "Use git fetch + examine before git merge for safer updates"
+      ],
+      "notes": "pull is a convenience that can cause unexpected merges; many prefer fetch + manual merge/rebase."
+    },
+    {
+      "name": "git push",
+      "common_forms_and_flags": [
+        "git push — push current branch to default remote",
+        "git push origin main — push specific branch",
+        "git push --set-upstream origin feature or -u — set upstream",
+        "git push --force — force push (dangerous)",
+        "git push --force-with-lease — safer force (recommended)",
+        "git push --tags — push tags",
+        "git push origin :branch or git push --delete origin branch — delete remote branch",
+        "git push origin HEAD:refs/for/main — Gerrit-style (special)"
+      ],
+      "common_workflows": [
+        "git push -u origin feature — first push to set upstream",
+        "After rebase or commit --amend: git push --force-with-lease",
+        "CI gating: git push triggers pipelines"
+      ],
+      "notes": "Prefer --force-with-lease over --force when rewriting history."
+    },
+    {
+      "name": "git remote",
+      "common_forms_and_flags": [
+        "git remote — list names",
+        "git remote -v — show URLs",
+        "git remote add origin <url> — add remote",
+        "git remote remove <name> or git remote rm <name>",
+        "git remote rename old new",
+        "git remote set-url origin <newurl>",
+        "git remote show origin — show verbose info"
+      ],
+      "common_workflows": [
+        "git remote add origin git@host:org/repo.git && git push -u origin main",
+        "git remote set-url origin git@newhost:org/repo.git — change remote"
+      ],
+      "notes": "Use git remote -v to see fetch/push URL."
+    },
+    {
+      "name": "git ls-remote",
+      "common_forms_and_flags": [
+        "git ls-remote <url> — list refs on remote",
+        "git ls-remote --heads <url> — list heads only",
+        "git ls-remote --tags <url> — tags only"
+      ],
+      "common_workflows": [
+        "Check remote refs before cloning or pushing (useful in scripts)"
+      ],
+      "notes": null
+    },
+    {
+      "name": "git credential",
+      "common_forms_and_flags": [
+        "git credential fill, git credential approve, git credential reject — used by helpers",
+        "git config --global credential.helper store — save credentials"
+      ],
+      "common_workflows": [
+        "Configure credential helpers: git config --global credential.helper cache or store or manager-core (platform dependent)"
+      ],
+      "notes": "Use OS credential managers (manager-core) for secure storage."
+    },
+    {
+      "name": "git stash (group)",
+      "common_forms_and_flags": [
+        "git stash push or git stash — stash changes",
+        "git stash push -m \"message\" — name stash",
+        "git stash push --include-untracked or -u — include untracked files",
+        "git stash push --all or -a — include ignored files too",
+        "git stash list — show stashes",
+        "git stash show — show last stash summary",
+        "git stash apply [<stash>] — apply stash without dropping",
+        "git stash pop [<stash>] — apply and drop (commonly git stash pop)",
+        "git stash drop <stash> — delete stash",
+        "git stash branch <branch> [<stash>] — create branch from stash"
+      ],
+      "common_workflows": [
+        "git stash push -u — keep working directory clean to switch branch",
+        "git stash pop — apply stash and drop (common)",
+        "git stash branch myfix stash@{0} — create branch from stash for separate work"
+      ],
+      "notes": "Stashes are numbered stash@{0}; use git stash show -p stash@{1} to view patch."
+    },
+    {
+      "name": "git apply",
+      "common_forms_and_flags": [
+        "git apply patch.diff — apply patch to working tree",
+        "git apply --index patch.diff — apply patch and update index (stage)",
+        "git apply --check patch.diff — check if patch applies",
+        "git apply -R patch.diff — reverse apply"
+      ],
+      "common_workflows": [
+        "git format-patch -> email -> git am to apply series as commits",
+        "wget example.patch && git apply --index example.patch && git commit -m \"apply patch\""
+      ],
+      "notes": "git apply will not create commits unless used with index + commit."
+    },
+    {
+      "name": "git bisect",
+      "common_forms_and_flags": [
+        "git bisect start",
+        "git bisect bad — mark current as bad",
+        "git bisect good <commit> — mark known good",
+        "git bisect run <test-script> — automate bisection with script exit codes",
+        "git bisect reset — end bisection"
+      ],
+      "common_workflows": [
+        "git bisect start -> git bisect bad -> git bisect good v1.2 -> git bisect run ./test.sh — find bad commit via tests"
+      ],
+      "notes": "Bisection requires deterministic tests."
+    },
+    {
+      "name": "git grep",
+      "common_forms_and_flags": [
+        "git grep \"pattern\" — search tracked files",
+        "git grep -n — show line numbers",
+        "git grep -i — ignore case",
+        "git grep --cached — search index",
+        "git grep -e \"pattern1\" -e \"pattern2\" — multiple patterns",
+        "git grep --name-only — filenames only"
+      ],
+      "common_workflows": [
+        "git grep -n \"TODO\" origin/main..HEAD — search changes in range",
+        "Use in scripts: git grep -l pattern | xargs ..."
+      ],
+      "notes": null
+    },
+    {
+      "name": "git blame",
+      "common_forms_and_flags": [
+        "git blame <file> — annotate lines with commit/author",
+        "git blame -L <start>,<end> <file> — limit lines",
+        "git blame -w — ignore whitespace",
+        "git blame --porcelain — parseable output"
+      ],
+      "common_workflows": [
+        "git blame -L 1,200 README.md — find who last changed a section"
+      ],
+      "notes": null
+    },
+    {
+      "name": "git clean",
+      "common_forms_and_flags": [
+        "git clean -n — dry-run",
+        "git clean -f — force delete untracked files",
+        "git clean -fd — delete untracked directories",
+        "git clean -fdx — delete ignored files too (dangerous)",
+        "git clean -e <pattern> — exclude pattern"
+      ],
+      "common_workflows": [
+        "git clean -fdn then git clean -fd — ensure safe removal"
+      ],
+      "notes": "Use with caution; -x deletes ignored files including config."
+    },
+    {
+      "name": "git archive",
+      "common_forms_and_flags": [
+        "git archive --format=tar --output=repo.tar HEAD",
+        "git archive --format=zip --output=repo.zip --prefix=repo/ HEAD",
+        "git archive <commit> path — archive subdirectory"
+      ],
+      "common_workflows": [
+        "git archive --format=tar --output=release.tar HEAD — export snapshot for release"
+      ],
+      "notes": null
+    },
+    {
+      "name": "git bundle",
+      "common_forms_and_flags": [
+        "git bundle create repo.bundle --all — create bundle file",
+        "git clone repo.bundle <dir> — clone from bundle",
+        "git bundle verify repo.bundle — check integrity",
+        "git bundle list-heads repo.bundle — list refs inside bundle"
+      ],
+      "common_workflows": [
+        "Transfer repository without network: create bundle, copy, and clone/apply."
+      ],
+      "notes": null
+    },
+    {
+      "name": "git submodule",
+      "common_forms_and_flags": [
+        "git submodule add <url> [path] — add submodule",
+        "git submodule init — initialize local config",
+        "git submodule update — fetch checked-out commit",
+        "git submodule update --init --recursive — init + update recursively",
+        "git submodule foreach 'git pull origin main' — operate across submodules",
+        "git submodule deinit <path> — deinit",
+        "git submodule sync --recursive — sync URLs"
+      ],
+      "common_workflows": [
+        "git clone --recurse-submodules — clone including submodules",
+        "git submodule add git@host:lib.git vendor/lib — add external dependency"
+      ],
+      "notes": "Submodules are a common source of confusion; using --recurse-submodules reduces surprises."
+    },
+    {
+      "name": "git worktree",
+      "common_forms_and_flags": [
+        "git worktree add <path> <branch> — create working tree for branch",
+        "git worktree list — list worktrees",
+        "git worktree remove <path> — remove",
+        "git worktree prune — prune stale worktrees"
+      ],
+      "common_workflows": [
+        "git worktree add ../w-tree feature-branch — work on multiple branches concurrently"
+      ],
+      "notes": "Worktrees share the same object database but separate working trees."
+    },
+    {
+      "name": "git config",
+      "common_forms_and_flags": [
+        "git config user.name \"Name\" / git config user.email \"a@b\"",
+        "git config --global user.name \"Name\" — set globally",
+        "git config --system / --local — config levels",
+        "git config --list — show config",
+        "git config --get core.editor — query value",
+        "git config --unset key / --remove-section section"
+      ],
+      "common_workflows": [
+        "git config --global credential.helper store",
+        "git config pull.rebase true — default pull to rebase"
+      ],
+      "notes": "Configs can be set per-repo or global."
+    },
+    {
+      "name": "git help",
+      "common_forms_and_flags": [
+        "git help <command> — open manpage",
+        "git <command> --help — equivalent",
+        "git help -a — list available commands",
+        "git help -g — list available guides"
+      ],
+      "common_workflows": [
+        "git help commit — read docs on commit usage"
+      ],
+      "notes": null
+    },
+    {
+      "name": "git describe",
+      "common_forms_and_flags": [
+        "git describe --tags — describe commit by nearest tag",
+        "git describe --always — show commit hash if no tag",
+        "git describe --dirty — append -dirty if working tree changed",
+        "git describe --long — longer format"
+      ],
+      "common_workflows": [
+        "Use git describe --tags --long to generate human-friendly build versions."
+      ],
+      "notes": null
+    },
+    {
+      "name": "git daemon",
+      "common_forms_and_flags": [
+        "git daemon --reuseaddr --base-path=/srv/git --export-all --verbose",
+        "git daemon --enable=receive-pack — enable pushes (careful)"
+      ],
+      "common_workflows": [
+        "git daemon can serve repositories via the git protocol for anonymous read access (rare; used for quick sharing)"
+      ],
+      "notes": "Usually replaced by SSH/HTTP(S) hosting; do not expose without security considerations."
+    },
+    {
+      "name": "git reset",
+      "common_forms_and_flags": [
+        "git reset --soft <commit> — move HEAD, keep staged & working tree (keeps changes staged)",
+        "git reset --mixed <commit> (default) — move HEAD, keep working tree, unstage changes",
+        "git reset --hard <commit> — move HEAD and reset index & working tree (destructive)",
+        "git reset --keep <commit> — reset unless conflicts",
+        "git reset <file> — unstage file (legacy; git restore --staged preferred)"
+      ],
+      "common_workflows": [
+        "git reset --soft HEAD~1 — uncommit but keep changes staged",
+        "git reset --hard origin/main — make branch exactly match remote (dangerous)"
+      ],
+      "notes": "--hard will delete uncommitted changes."
+    },
+    {
+      "name": "git reflog",
+      "common_forms_and_flags": [
+        "git reflog — show reference log for HEAD",
+        "git reflog show <ref>",
+        "git reflog expire --expire=now --all — expire reflogs"
+      ],
+      "common_workflows": [
+        "After accidental reset --hard, use git reflog to find previous HEAD then git checkout -b recover <sha>."
+      ],
+      "notes": "git reflog used to recover lost commits: git checkout <sha> from reflog."
+    },
+    {
+      "name": "git filter-branch / git filter-repo",
+      "common_forms_and_flags": [
+        "git filter-branch --tree-filter 'rm -f filename' -- --all (legacy)",
+        "git filter-repo --path filename --invert-paths (modern, external tool; much faster & safer)"
+      ],
+      "common_workflows": [
+        "Rewriting history to remove secrets: prefer git filter-repo and then force-push (git push --force-with-lease)"
+      ],
+      "notes": "History rewriting is destructive—coordinate with collaborators."
+    },
+    {
+      "name": "git cherry",
+      "common_forms_and_flags": [
+        "git cherry -v <upstream> <head> — find commits unique to head (not merged)"
+      ],
+      "common_workflows": [
+        "Evaluate which commits are not merged to upstream."
+      ],
+      "notes": null
+    },
+    {
+      "name": "git format-patch",
+      "common_forms_and_flags": [
+        "git format-patch origin/main — create patches for commits on current branch not in origin/main",
+        "git format-patch -n <N> — last N commits",
+        "git format-patch --stdout — output patches to stdout",
+        "git format-patch --cover-letter — create cover letter"
+      ],
+      "common_workflows": [
+        "git format-patch -3 → send patches via email or apply with git am"
+      ],
+      "notes": null
+    },
+    {
+      "name": "git am",
+      "common_forms_and_flags": [
+        "git am <patches> — apply mailbox patches as commits",
+        "git am --signoff — add sign-off",
+        "git am --3way — attempt 3-way merge on conflicts"
+      ],
+      "common_workflows": [
+        "Receiving emailed patches: git am 0001-some-fix.patch"
+      ],
+      "notes": null
+    },
+    {
+      "name": "git rerere",
+      "common_forms_and_flags": [
+        "git config --global rerere.enabled true — enable reuse recorded resolutions",
+        "git rerere status, git rerere clear — auxiliary commands"
+      ],
+      "common_workflows": [
+        "Helpful when repeatedly rebasing/merging the same conflicts."
+      ],
+      "notes": "git rerere commands are mostly automatic."
+    },
+    {
+      "name": "git shortlog",
+      "common_forms_and_flags": [
+        "git shortlog -s -n origin/main..HEAD — contributions summary by author",
+        "git shortlog --numbered --summary"
+      ],
+      "common_workflows": [
+        "Prepare CONTRIBUTORS or release notes."
+      ],
+      "notes": null
+    },
+    {
+      "name": "git fsck",
+      "common_forms_and_flags": [
+        "git fsck --full — check integrity",
+        "git fsck --lost-found — find dangling objects"
+      ],
+      "common_workflows": [
+        "Run on server/backup to verify repo health."
+      ],
+      "notes": null
+    },
+    {
+      "name": "git verify-pack",
+      "common_forms_and_flags": [
+        "git verify-pack -v .git/objects/pack/pack-*.idx — check pack internals"
+      ],
+      "common_workflows": [
+        "Diagnose pack bloat & check sizes prior to prune/gc."
+      ],
+      "notes": null
+    },
+    {
+      "name": "git count-objects",
+      "common_forms_and_flags": [
+        "git count-objects -v — verbose repo object summary"
+      ],
+      "common_workflows": [
+        "Quick repo size diagnostics."
+      ],
+      "notes": null
+    },
+    {
+      "name": "git prune",
+      "common_forms_and_flags": [
+        "git prune — remove unreachable objects",
+        "git prune --expire <time> — expire older than given time"
+      ],
+      "common_workflows": [
+        "Run before git gc for cleanup."
+      ],
+      "notes": "Dangerous on backups; ensure you have refs."
+    },
+    {
+      "name": "git gc",
+      "common_forms_and_flags": [
+        "git gc — garbage-collect",
+        "git gc --aggressive — more thorough (slower)",
+        "git gc --prune=now — prune immediately"
+      ],
+      "common_workflows": [
+        "Scheduled server maintenance: git gc --aggressive occasionally."
+      ],
+      "notes": null
+    },
+    {
+      "name": "git whatchanged",
+      "common_forms_and_flags": [
+        "git whatchanged — older log-like tool"
+      ],
+      "common_workflows": [
+        "Replaced by git log --name-status --pretty=..."
+      ],
+      "notes": null
+    }
+  ]
+}

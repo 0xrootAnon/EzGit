@@ -1593,24 +1593,28 @@ func main() {
 	} else {
 		fmt.Println("Warning: failed to get working dir:", err)
 	}
-
-	const combosPath = "combos_updated.json"
-	if doc, err := combos.LoadFromFile(combosPath); err == nil {
+	if doc, err := combos.LoadEmbedded(); err == nil && doc != nil {
 		combos.Register(doc)
-		fmt.Println("Loaded combos_updated.json: enhanced Layer-3 preview enabled")
-		fmt.Println("---- combos: verifying action_key -> registered action map ----")
-		for _, c := range doc.Commands {
-			fmt.Printf("combo available for action_key=%q\n", c.ActionKey)
-		}
-		fmt.Println("---- end combos verification ----")
+		fmt.Println("Loaded embedded combos (combos_updated.json preferred)")
 	} else {
-		fmt.Printf("combos: failed to load %s: %v\n", combosPath, err)
-		if doc2, err2 := combos.LoadFromFile("combos.json"); err2 == nil {
-			combos.Register(doc2)
-			fmt.Println("Loaded combos.json: enhanced Layer-3 preview enabled")
+		const combosPath = "combos_updated.json"
+		if doc, err := combos.LoadFromFile(combosPath); err == nil {
+			combos.Register(doc)
+			fmt.Println("Loaded combos_updated.json: enhanced Layer-3 preview enabled")
+			fmt.Println("---- combos: verifying action_key -> registered action map ----")
+			for _, c := range doc.Commands {
+				fmt.Printf("combo available for action_key=%q\n", c.ActionKey)
+			}
+			fmt.Println("---- end combos verification ----")
 		} else {
-			fmt.Printf("combos: failed to load fallback combos.json: %v\n", err2)
-			fmt.Println("combos: continuing without combos metadata (no UI change).")
+			fmt.Printf("combos: failed to load %s: %v\n", combosPath, err)
+			if doc2, err2 := combos.LoadFromFile("combos.json"); err2 == nil {
+				combos.Register(doc2)
+				fmt.Println("Loaded combos.json: enhanced Layer-3 preview enabled")
+			} else {
+				fmt.Printf("combos: failed to load fallback combos.json: %v\n", err2)
+				fmt.Println("combos: continuing without combos metadata (no UI change).")
+			}
 		}
 	}
 	action.RegisterBuiltins(action.DefaultRegistry)

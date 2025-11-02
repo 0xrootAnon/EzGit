@@ -53,6 +53,19 @@ var (
 	aliasMap  = map[string]string{}
 )
 
+func LoadFromBytes(raw []byte) (*CombosFile, error) {
+	var doc CombosFile
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return nil, err
+	}
+	for i := range doc.Commands {
+		sort.SliceStable(doc.Commands[i].Flags, func(a, b int) bool {
+			return doc.Commands[i].Flags[a].PreviewOrder < doc.Commands[i].Flags[b].PreviewOrder
+		})
+	}
+	return &doc, nil
+}
+
 func LoadFromFile(path string) (*CombosFile, error) {
 	f, err := os.Open(path)
 	if err != nil {

@@ -1,0 +1,2756 @@
+{
+  "_comment": "Machine-ready per-flag schema for common git commands and daily-use flags.",
+  "commands": [
+    {
+      "action_key": "init",
+      "name": "git init",
+      "category": "Repository",
+      "description": "Create Repo",
+      "forms": [
+        "git init",
+        "git init <dir>",
+        "git init --bare",
+        "git init --template=<dir>",
+        "git init --separate-git-dir=<gitdir>"
+      ],
+      "flags": [
+        {
+          "key": "--bare",
+          "param_key": "bare",
+          "label": "Bare repository",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "advanced": false,
+          "required": false,
+          "inferrableFrom": [],
+          "validate": null,
+          "confirmation": "none",
+          "example": "--bare",
+          "previewOrder": 10,
+          "mutuallyExclusive": [],
+          "implies": []
+        },
+        {
+          "key": "--template",
+          "param_key": "template_dir",
+          "label": "Template directory",
+          "type": "path",
+          "default": null,
+          "manualOnly": true,
+          "advanced": true,
+          "required": false,
+          "inferrableFrom": [],
+          "validate": { "exists": false },
+          "confirmation": "none",
+          "example": "--template=/usr/share/git-core/templates",
+          "previewOrder": 30,
+          "mutuallyExclusive": [],
+          "implies": []
+        },
+        {
+          "key": "--separate-git-dir",
+          "param_key": "gitdir",
+          "label": "Separate .git directory",
+          "type": "path",
+          "default": null,
+          "manualOnly": true,
+          "advanced": true,
+          "required": false,
+          "validate": { "pattern": "^/.+" },
+          "example": "--separate-git-dir=/srv/repo.git",
+          "previewOrder": 40
+        },
+        {
+          "key": "directory",
+          "param_key": "directory",
+          "label": "Target directory",
+          "type": "path",
+          "manualOnly": false,
+          "required": false,
+          "example": "proj",
+          "previewOrder": 1
+        }
+      ],
+      "notes": "--bare repositories have no working tree; used for remotes.",
+      "safety": []
+    },
+    {
+      "action_key": "clone",
+      "name": "git clone",
+      "category": "Repository",
+      "description": "Clone Repo",
+      "forms": [
+        "git clone <repository_url>",
+        "git clone <repository_url> <dir>",
+        "GIT_SSH_COMMAND='ssh -i key' git clone <repository_url>"
+      ],
+      "flags": [
+        {
+          "key": "repository_url",
+          "param_key": "repository_url",
+          "label": "Repository URL",
+          "type": "url",
+          "manualOnly": true,
+          "required": true,
+          "validate": { "pattern": "^(https?:\\/\\/|git@|ssh:\\/\\/|[\\w.-]+:).+" },
+          "example": "git@github.com:org/repo.git",
+          "previewOrder": 1
+        },
+        {
+          "key": "directory",
+          "param_key": "directory",
+          "label": "Destination directory",
+          "type": "path",
+          "manualOnly": false,
+          "required": false,
+          "example": "my-repo",
+          "previewOrder": 2
+        },
+        {
+          "key": "--branch",
+          "param_key": "branch",
+          "label": "Checkout branch after clone",
+          "type": "string",
+          "manualOnly": false,
+          "required": false,
+          "example": "--branch develop",
+          "previewOrder": 5
+        },
+        {
+          "key": "-b",
+          "param_key": "branch_alias",
+          "label": "Branch (alias)",
+          "type": "string",
+          "manualOnly": false,
+          "required": false,
+          "example": "-b develop",
+          "previewOrder": 6,
+          "mutuallyExclusive": []
+        },
+        {
+          "key": "--single-branch",
+          "param_key": "single_branch",
+          "label": "Clone single branch",
+          "type": "boolean",
+          "default": false,
+          "advanced": false,
+          "manualOnly": false,
+          "validate": null,
+          "example": "--single-branch",
+          "previewOrder": 10,
+          "mutuallyExclusive": ["--mirror"]
+        },
+        {
+          "key": "--depth",
+          "param_key": "depth",
+          "label": "Shallow clone depth",
+          "type": "int",
+          "default": 1,
+          "manualOnly": false,
+          "advanced": true,
+          "required": false,
+          "validate": { "min": 1 },
+          "example": "--depth 1",
+          "previewOrder": 11,
+          "mutuallyExclusive": ["--mirror"]
+        },
+        {
+          "key": "--recursive",
+          "param_key": "recurse_submodules",
+          "label": "Init submodules",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "advanced": false,
+          "example": "--recursive",
+          "previewOrder": 12,
+          "implies": ["--recurse-submodules"]
+        },
+        {
+          "key": "--recurse-submodules",
+          "param_key": "recurse_submodules2",
+          "label": "Init submodules (alternate)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "advanced": false,
+          "example": "--recurse-submodules",
+          "previewOrder": 13
+        },
+        {
+          "key": "--mirror",
+          "param_key": "mirror",
+          "label": "Mirror clone (bare)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "advanced": true,
+          "example": "--mirror",
+          "previewOrder": 15,
+          "mutuallyExclusive": ["--single-branch", "--depth"]
+        },
+        {
+          "key": "--config",
+          "param_key": "config",
+          "label": "Set config on clone",
+          "type": "string",
+          "manualOnly": false,
+          "advanced": true,
+          "required": false,
+          "example": "--config core.autocrlf=true",
+          "previewOrder": 20
+        },
+        {
+          "key": "GIT_SSH_COMMAND",
+          "param_key": "git_ssh_command",
+          "label": "GIT_SSH_COMMAND environment override",
+          "type": "string",
+          "manualOnly": true,
+          "required": false,
+          "example": "GIT_SSH_COMMAND='ssh -i /path/key'",
+          "previewOrder": 99
+        }
+      ],
+      "notes": "--depth reduces fetched history; use git fetch --unshallow to expand.",
+      "safety": ["network"]
+    },
+    {
+      "action_key": "add",
+      "name": "git add",
+      "category": "WorkingTree",
+      "description": "Stage Changes",
+      "forms": ["git add <pathspec>", "git add .", "git add -p"],
+      "flags": [
+        {
+          "key": "<pathspec>",
+          "param_key": "pathspec",
+          "label": "File or pathspec",
+          "type": "path",
+          "manualOnly": false,
+          "required": true,
+          "example": "src/*.js",
+          "previewOrder": 1
+        },
+        {
+          "key": ".",
+          "param_key": "dot",
+          "label": "Add everything in current directory",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "example": ".",
+          "previewOrder": 5
+        },
+        {
+          "key": "-A",
+          "param_key": "all",
+          "label": "Stage all changes (including deletions)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "example": "-A",
+          "previewOrder": 6
+        },
+        {
+          "key": "-u",
+          "param_key": "update",
+          "label": "Stage tracked changes and deletions",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "example": "-u",
+          "previewOrder": 7
+        },
+        {
+          "key": "-p",
+          "param_key": "patch",
+          "label": "Interactive patch mode",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "advanced": false,
+          "example": "-p",
+          "previewOrder": 8
+        },
+        {
+          "key": "--intent-to-add",
+          "param_key": "intent_to_add",
+          "label": "Record intent to add",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "advanced": true,
+          "example": "--intent-to-add README.md",
+          "previewOrder": 20
+        },
+        {
+          "key": "--renormalize",
+          "param_key": "renormalize",
+          "label": "Re-normalize line endings",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "advanced": true,
+          "example": "--renormalize .",
+          "previewOrder": 21
+        }
+      ],
+      "notes": "Use git status --porcelain to inspect index vs working tree.",
+      "safety": []
+    },
+    {
+      "action_key": "mv",
+      "name": "git mv",
+      "category": "WorkingTree",
+      "description": "Move/Rename Files",
+      "forms": ["git mv <old> <new>", "git mv -k <old> <new>"],
+      "flags": [
+        {
+          "key": "<old>",
+          "param_key": "old_path",
+          "label": "Old path",
+          "type": "path",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "<new>",
+          "param_key": "new_path",
+          "label": "New path",
+          "type": "path",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 2
+        },
+        {
+          "key": "-k",
+          "param_key": "allow_failures",
+          "label": "Allow failures",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "advanced": true,
+          "previewOrder": 10
+        }
+      ],
+      "notes": "git mv is convenience; equivalent manual steps: mv && git add new && git rm old.",
+      "safety": []
+    },
+    {
+      "action_key": "restore",
+      "name": "git restore",
+      "category": "WorkingTree",
+      "description": "Restore files",
+      "forms": [
+        "git restore <path>",
+        "git restore --staged <path>",
+        "git restore --source <ref> -- <path>"
+      ],
+      "flags": [
+        {
+          "key": "<path>",
+          "param_key": "path",
+          "label": "Path to restore",
+          "type": "path",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "--staged",
+          "param_key": "staged",
+          "label": "Unstage (index -> working tree)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "example": "--staged",
+          "previewOrder": 5
+        },
+        {
+          "key": "--source",
+          "param_key": "source_ref",
+          "label": "Source ref to restore from",
+          "type": "string",
+          "manualOnly": false,
+          "required": false,
+          "example": "--source origin/main",
+          "previewOrder": 10
+        },
+        {
+          "key": "-p",
+          "param_key": "patch",
+          "label": "Patch mode",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "example": "-p",
+          "previewOrder": 20
+        },
+        {
+          "key": "--worktree",
+          "param_key": "worktree",
+          "label": "Restore worktree",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "advanced": true,
+          "previewOrder": 30
+        }
+      ],
+      "notes": "Replaces older 'git checkout -- <file>' pattern for file restores.",
+      "safety": []
+    },
+    {
+      "action_key": "rm",
+      "name": "git rm",
+      "category": "WorkingTree",
+      "description": "Remove Files",
+      "forms": ["git rm <file>", "git rm --cached <file>", "git rm -r <dir>"],
+      "flags": [
+        {
+          "key": "<path>",
+          "param_key": "path",
+          "label": "File or path to remove",
+          "type": "path",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "--cached",
+          "param_key": "cached",
+          "label": "Remove from index only (keep file)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "-r",
+          "param_key": "recursive",
+          "label": "Recursive remove",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 6
+        },
+        {
+          "key": "-f",
+          "param_key": "force",
+          "label": "Force remove",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "confirmation": "dangerous",
+          "example": "-f",
+          "previewOrder": 10
+        }
+      ],
+      "notes": "--cached useful to stop tracking files while keeping local copy.",
+      "safety": []
+    },
+    {
+      "action_key": "commit",
+      "name": "git commit",
+      "category": "WorkingTree",
+      "description": "Make Commit",
+      "forms": ["git commit -m \"message\"", "git commit --amend", "git commit -a -m \"message\""],
+      "flags": [
+        {
+          "key": "-m",
+          "param_key": "message",
+          "label": "Commit message",
+          "type": "string",
+          "manualOnly": true,
+          "required": true,
+          "example": "-m \"fix bug\"",
+          "previewOrder": 1
+        },
+        {
+          "key": "--amend",
+          "param_key": "amend",
+          "label": "Amend last commit",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "advanced": true,
+          "example": "--amend",
+          "previewOrder": 10,
+          "confirmation": "warn-if-pushed"
+        },
+        {
+          "key": "-a",
+          "param_key": "auto_stage_tracked",
+          "label": "Auto-stage tracked changes",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "example": "-a",
+          "previewOrder": 11
+        },
+        {
+          "key": "-s",
+          "param_key": "signoff",
+          "label": "Sign-off (DCO)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 12
+        },
+        {
+          "key": "--no-verify",
+          "param_key": "no_verify",
+          "label": "Skip hooks",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "advanced": true,
+          "previewOrder": 20
+        },
+        {
+          "key": "--author",
+          "param_key": "author",
+          "label": "Override author",
+          "type": "string",
+          "manualOnly": true,
+          "required": false,
+          "example": "--author=\"Name <email>\"",
+          "previewOrder": 21
+        },
+        {
+          "key": "--allow-empty",
+          "param_key": "allow_empty",
+          "label": "Allow empty commit",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 30
+        },
+        {
+          "key": "--date",
+          "param_key": "date",
+          "label": "Set commit date",
+          "type": "string",
+          "manualOnly": true,
+          "advanced": true,
+          "example": "--date=\"2025-10-31 12:00\"",
+          "previewOrder": 40
+        },
+        {
+          "key": "-v",
+          "param_key": "verbose",
+          "label": "Verbose commit (show diff)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 50
+        }
+      ],
+      "notes": "Amending and force-pushing is common but dangerous on shared branches—use --force-with-lease.",
+      "safety": []
+    },
+    {
+      "action_key": "status",
+      "name": "git status",
+      "category": "Inspect",
+      "description": "Show Status",
+      "forms": ["git status", "git status -s", "git status --porcelain=2"],
+      "flags": [
+        {
+          "key": "-s",
+          "param_key": "short",
+          "label": "Short output",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "--porcelain",
+          "param_key": "porcelain",
+          "label": "Porcelain output (machine parseable)",
+          "type": "string",
+          "default": "1",
+          "manualOnly": false,
+          "example": "--porcelain=2",
+          "previewOrder": 2
+        },
+        {
+          "key": "-b",
+          "param_key": "branch",
+          "label": "Show branch",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "example": "-sb",
+          "previewOrder": 3
+        }
+      ],
+      "notes": "Porcelain output is recommended for GUIs and scripts.",
+      "safety": []
+    },
+    {
+      "action_key": "diff",
+      "name": "git diff",
+      "category": "Inspect",
+      "description": "Show Diff",
+      "forms": ["git diff", "git diff --staged", "git diff <commit1> <commit2>"],
+      "flags": [
+        {
+          "key": "--staged",
+          "param_key": "staged",
+          "label": "Diff staged changes",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "example": "--staged",
+          "previewOrder": 1
+        },
+        {
+          "key": "--name-only",
+          "param_key": "name_only",
+          "label": "List file names only",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 2
+        },
+        {
+          "key": "--name-status",
+          "param_key": "name_status",
+          "label": "Show A/M/D with names",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 3
+        },
+        {
+          "key": "--stat",
+          "param_key": "stat",
+          "label": "Show diffstat summary",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 4
+        },
+        {
+          "key": "-U",
+          "param_key": "unified_context",
+          "label": "Number of context lines",
+          "type": "int",
+          "default": 3,
+          "manualOnly": true,
+          "validate": { "min": 0 },
+          "example": "-U0",
+          "previewOrder": 10
+        },
+        {
+          "key": "--color-words",
+          "param_key": "color_words",
+          "label": "Word diff",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 11
+        },
+        {
+          "key": "--no-index",
+          "param_key": "no_index",
+          "label": "Diff files outside repo",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "advanced": true,
+          "previewOrder": 20
+        }
+      ],
+      "notes": "Useful for generating patches (git diff > file.patch).",
+      "safety": []
+    },
+    {
+      "action_key": "log",
+      "name": "git log",
+      "category": "History",
+      "description": "Show History",
+      "forms": ["git log", "git log --oneline --graph --decorate", "git log -n <N>"],
+      "flags": [
+        {
+          "key": "--oneline",
+          "param_key": "oneline",
+          "label": "Compact single-line per commit",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "--graph",
+          "param_key": "graph",
+          "label": "Show ASCII graph",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 2
+        },
+        {
+          "key": "--decorate",
+          "param_key": "decorate",
+          "label": "Show refs next to commits",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 3
+        },
+        {
+          "key": "-n",
+          "param_key": "limit",
+          "label": "Limit to N commits",
+          "type": "int",
+          "manualOnly": false,
+          "required": false,
+          "validate": { "min": 1 },
+          "example": "-n 10",
+          "previewOrder": 10
+        },
+        {
+          "key": "--author",
+          "param_key": "author",
+          "label": "Filter by author",
+          "type": "string",
+          "manualOnly": false,
+          "previewOrder": 11
+        },
+        {
+          "key": "--since",
+          "param_key": "since",
+          "label": "Since date",
+          "type": "string",
+          "manualOnly": false,
+          "example": "--since=\"2 weeks ago\"",
+          "previewOrder": 12
+        },
+        {
+          "key": "--stat",
+          "param_key": "stat",
+          "label": "Show diffstat per commit",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 13
+        },
+        {
+          "key": "-p",
+          "param_key": "patch",
+          "label": "Show patch per commit",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 14
+        },
+        {
+          "key": "--grep",
+          "param_key": "grep",
+          "label": "Search commit messages",
+          "type": "string",
+          "manualOnly": false,
+          "previewOrder": 15
+        },
+        {
+          "key": "--pretty",
+          "param_key": "pretty",
+          "label": "Custom format",
+          "type": "string",
+          "manualOnly": true,
+          "example": "--pretty=format:\"%h %ad | %s\"",
+          "previewOrder": 20
+        }
+      ],
+      "notes": "Common UI display: --graph --decorate --oneline --all",
+      "safety": []
+    },
+    {
+      "action_key": "show",
+      "name": "git show",
+      "category": "Inspect",
+      "description": "Show Objects",
+      "forms": ["git show <commit>", "git show <commit>:path/to/file"],
+      "flags": [
+        {
+          "key": "<commit>",
+          "param_key": "commit",
+          "label": "Commit-ish or object",
+          "type": "string",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "--name-only",
+          "param_key": "name_only",
+          "label": "List changed file names",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "--pretty",
+          "param_key": "pretty",
+          "label": "Pretty format (raw etc.)",
+          "type": "string",
+          "manualOnly": true,
+          "example": "--pretty=raw",
+          "previewOrder": 10
+        },
+        {
+          "key": "--stat",
+          "param_key": "stat",
+          "label": "Show stats only",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 12
+        }
+      ],
+      "notes": "Can inspect blobs and tree objects directly via commit:path.",
+      "safety": []
+    },
+    {
+      "action_key": "branch",
+      "name": "git branch",
+      "category": "Branching",
+      "description": "Manage Branches",
+      "forms": ["git branch", "git branch -r", "git branch <name>"],
+      "flags": [
+        {
+          "key": "",
+          "param_key": "name_optional",
+          "label": "Branch name (optional)",
+          "type": "string",
+          "manualOnly": false,
+          "required": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "-r",
+          "param_key": "remote",
+          "label": "List remote branches",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 2
+        },
+        {
+          "key": "-a",
+          "param_key": "all",
+          "label": "List all branches",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 3
+        },
+        {
+          "key": "-d",
+          "param_key": "delete",
+          "label": "Delete branch (safe)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "confirmation": "confirm-if-not-merged",
+          "previewOrder": 10
+        },
+        {
+          "key": "-D",
+          "param_key": "delete_force",
+          "label": "Force delete branch",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "confirmation": "dangerous",
+          "previewOrder": 11
+        },
+        {
+          "key": "--move",
+          "param_key": "move",
+          "label": "Move/rename branch",
+          "type": "string",
+          "manualOnly": true,
+          "example": "--move old new",
+          "previewOrder": 20
+        },
+        {
+          "key": "--set-upstream-to",
+          "param_key": "set_upstream",
+          "label": "Set upstream branch",
+          "type": "string",
+          "manualOnly": true,
+          "example": "--set-upstream-to=origin/main feature",
+          "previewOrder": 21
+        },
+        {
+          "key": "--contains",
+          "param_key": "contains",
+          "label": "Show branches containing a commit",
+          "type": "string",
+          "manualOnly": true,
+          "example": "--contains abc123",
+          "previewOrder": 22
+        }
+      ],
+      "notes": "Use git switch -c or git checkout -b to create+switch.",
+      "safety": []
+    },
+    {
+      "action_key": "checkout",
+      "name": "git checkout",
+      "category": "Branching",
+      "description": "Switch/Restore",
+      "forms": ["git checkout <branch>", "git checkout -b <new>", "git checkout -- <file>"],
+      "flags": [
+        {
+          "key": "<target>",
+          "param_key": "target",
+          "label": "Branch, commit or file path",
+          "type": "string",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "-b",
+          "param_key": "create_and_switch",
+          "label": "Create and switch to branch",
+          "type": "string",
+          "manualOnly": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "--detach",
+          "param_key": "detach",
+          "label": "Detached HEAD",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 10
+        },
+        {
+          "key": "--",
+          "param_key": "separator",
+          "label": "Path separator for file checkout",
+          "type": "flag",
+          "manualOnly": false,
+          "previewOrder": 99
+        }
+      ],
+      "notes": "Prefer git switch and git restore for clarity.",
+      "safety": []
+    },
+    {
+      "action_key": "switch",
+      "name": "git switch",
+      "category": "Branching",
+      "description": "Switch Branch",
+      "forms": ["git switch <branch>", "git switch -c <new>", "git switch --detach <commit>"],
+      "flags": [
+        {
+          "key": "<branch>",
+          "param_key": "branch",
+          "label": "Branch to switch to",
+          "type": "string",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "-c",
+          "param_key": "create_branch",
+          "label": "Create and switch",
+          "type": "string",
+          "manualOnly": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "--discard-changes",
+          "param_key": "discard_changes",
+          "label": "Discard local changes (force)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "confirmation": "warn-if-uncommitted",
+          "previewOrder": 10
+        },
+        {
+          "key": "--detach",
+          "param_key": "detach",
+          "label": "Detach HEAD at commit",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 11
+        }
+      ],
+      "notes": "Clearer separation between switching and restoring files.",
+      "safety": []
+    },
+    {
+      "action_key": "merge",
+      "name": "git merge",
+      "category": "Branching",
+      "description": "Merge Branch",
+      "forms": ["git merge <branch>", "git merge --no-ff <branch>", "git merge --squash <branch>"],
+      "flags": [
+        {
+          "key": "<branch>",
+          "param_key": "branch",
+          "label": "Branch to merge",
+          "type": "string",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "--no-ff",
+          "param_key": "no_ff",
+          "label": "Create a merge commit even if fast-forward",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "--ff-only",
+          "param_key": "ff_only",
+          "label": "Only fast-forward; fail otherwise",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 6
+        },
+        {
+          "key": "--squash",
+          "param_key": "squash",
+          "label": "Squash commits into working tree changes (no commit)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 7
+        },
+        {
+          "key": "--abort",
+          "param_key": "abort",
+          "label": "Abort merge (during conflicts)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "confirmation": "none",
+          "previewOrder": 20
+        },
+        {
+          "key": "--no-commit",
+          "param_key": "no_commit",
+          "label": "Do not auto-commit merge result",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 21
+        }
+      ],
+      "notes": "When conflicts occur, resolve files, git add them, then git commit (or git merge --continue).",
+      "safety": []
+    },
+    {
+      "action_key": "rebase",
+      "name": "git rebase",
+      "category": "History",
+      "description": "Rebase Commits",
+      "forms": ["git rebase <base>", "git rebase -i <base>", "git rebase --onto <newbase> <upstream> <branch>"],
+      "flags": [
+        {
+          "key": "<base>",
+          "param_key": "base",
+          "label": "Base branch or commit",
+          "type": "string",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "-i",
+          "param_key": "interactive",
+          "label": "Interactive rebase",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "advanced": true,
+          "previewOrder": 5
+        },
+        {
+          "key": "--onto",
+          "param_key": "onto",
+          "label": "Rebase onto new base (advanced)",
+          "type": "string",
+          "manualOnly": true,
+          "advanced": true,
+          "previewOrder": 10
+        },
+        {
+          "key": "--continue",
+          "param_key": "continue",
+          "label": "Continue rebase after conflicts",
+          "type": "boolean",
+          "manualOnly": true,
+          "previewOrder": 20
+        },
+        {
+          "key": "--skip",
+          "param_key": "skip",
+          "label": "Skip current patch",
+          "type": "boolean",
+          "manualOnly": true,
+          "previewOrder": 21
+        },
+        {
+          "key": "--abort",
+          "param_key": "abort",
+          "label": "Abort rebase",
+          "type": "boolean",
+          "manualOnly": true,
+          "previewOrder": 22
+        },
+        {
+          "key": "-x",
+          "param_key": "exec_cmd",
+          "label": "Run command after each commit",
+          "type": "string",
+          "manualOnly": true,
+          "advanced": true,
+          "example": "-x \"make test\"",
+          "previewOrder": 30
+        }
+      ],
+      "notes": "Rewriting shared history requires force-push (use --force-with-lease).",
+      "safety": ["rewrites-history"]
+    },
+    {
+      "action_key": "cherry-pick",
+      "name": "git cherry-pick",
+      "category": "History",
+      "description": "Apply a commit from another branch onto current branch.",
+      "forms": ["git cherry-pick <commit>", "git cherry-pick -x <commit>", "git cherry-pick -n <commit>"],
+      "flags": [
+        {
+          "key": "<commit>",
+          "param_key": "commit",
+          "label": "Commit to cherry-pick",
+          "type": "string",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "-x",
+          "param_key": "record_origin",
+          "label": "Record origin in message",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "-n",
+          "param_key": "no_commit",
+          "label": "Do not auto-commit",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 6
+        },
+        {
+          "key": "--continue",
+          "param_key": "continue",
+          "label": "Continue after resolving conflicts",
+          "type": "boolean",
+          "manualOnly": true,
+          "previewOrder": 20
+        },
+        {
+          "key": "--abort",
+          "param_key": "abort",
+          "label": "Abort cherry-pick",
+          "type": "boolean",
+          "manualOnly": true,
+          "previewOrder": 21
+        },
+        {
+          "key": "--skip",
+          "param_key": "skip",
+          "label": "Skip current commit",
+          "type": "boolean",
+          "manualOnly": true,
+          "previewOrder": 22
+        }
+      ],
+      "notes": "Use -x for traceability when backporting fixes.",
+      "safety": []
+    },
+    {
+      "action_key": "revert",
+      "name": "git revert",
+      "category": "History",
+      "description": "Revert Commit",
+      "forms": ["git revert <commit>", "git revert -n <commit>", "git revert --mainline <parent-number> <merge-commit>"],
+      "flags": [
+        {
+          "key": "<commit>",
+          "param_key": "commit",
+          "label": "Commit to revert",
+          "type": "string",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "-n",
+          "param_key": "no_commit",
+          "label": "Do not auto-commit (batch)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 5
+        },
+        {
+          "key": "--no-edit",
+          "param_key": "no_edit",
+          "label": "Use default commit message",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 6
+        },
+        {
+          "key": "--mainline",
+          "param_key": "mainline",
+          "label": "Parent number for reverting a merge",
+          "type": "int",
+          "manualOnly": true,
+          "validate": { "min": 1 },
+          "example": "--mainline 1",
+          "previewOrder": 10
+        }
+      ],
+      "notes": "Preferred safe method to undo public commits.",
+      "safety": []
+    },
+    {
+      "action_key": "tag",
+      "name": "git tag",
+      "category": "Branching",
+      "description": "Manage Tags",
+      "forms": ["git tag", "git tag -a v1.0 -m \"msg\"", "git tag v1.0 <commit>"],
+      "flags": [
+        {
+          "key": "",
+          "param_key": "tag_name_optional",
+          "label": "Tag name (optional)",
+          "type": "string",
+          "manualOnly": false,
+          "required": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "-a",
+          "param_key": "annotated",
+          "label": "Annotated tag with message",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "-m",
+          "param_key": "message",
+          "label": "Tag message",
+          "type": "string",
+          "manualOnly": true,
+          "previewOrder": 6
+        },
+        {
+          "key": "-d",
+          "param_key": "delete",
+          "label": "Delete tag locally",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 10
+        },
+        {
+          "key": "--sign",
+          "param_key": "sign",
+          "label": "GPG sign tag (alias -s)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 20
+        }
+      ],
+      "notes": "Annotated tags are recommended for release tagging (support messages and signing).",
+      "safety": []
+    },
+    {
+      "action_key": "fetch",
+      "name": "git fetch",
+      "category": "Collaboration",
+      "description": "Fetch Remote",
+      "forms": ["git fetch", "git fetch origin", "git fetch --prune", "git fetch --depth <n>"],
+      "flags": [
+        {
+          "key": "<remote>",
+          "param_key": "remote",
+          "label": "Remote name",
+          "type": "string",
+          "manualOnly": false,
+          "required": false,
+          "example": "origin",
+          "previewOrder": 1
+        },
+        {
+          "key": "--prune",
+          "param_key": "prune",
+          "label": "Prune stale remote-tracking branches",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "--depth",
+          "param_key": "depth",
+          "label": "Shallow fetch depth",
+          "type": "int",
+          "manualOnly": false,
+          "advanced": true,
+          "validate": { "min": 1 },
+          "example": "--depth 1",
+          "previewOrder": 10
+        },
+        {
+          "key": "--all",
+          "param_key": "all_remotes",
+          "label": "Fetch all remotes",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 11
+        }
+      ],
+      "notes": "Fetch only updates remote-tracking branches; you must merge/rebase/checkout to incorporate changes.",
+      "safety": ["network"]
+    },
+    {
+      "action_key": "pull",
+      "name": "git pull",
+      "category": "Collaboration",
+      "description": "Fetch & Merge",
+      "forms": ["git pull", "git pull --rebase", "git pull origin main"],
+      "flags": [
+        {
+          "key": "<remote> <branch>",
+          "param_key": "remote_branch",
+          "label": "Remote and branch",
+          "type": "string",
+          "manualOnly": false,
+          "required": false,
+          "example": "origin main",
+          "previewOrder": 1
+        },
+        {
+          "key": "--rebase",
+          "param_key": "rebase",
+          "label": "Use rebase instead of merge",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "--ff-only",
+          "param_key": "ff_only",
+          "label": "Only fast-forward",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 6
+        }
+      ],
+      "notes": "Consider using fetch + manual merge/rebase for safer workflows.",
+      "safety": ["network"]
+    },
+    {
+      "action_key": "push",
+      "name": "git push",
+      "category": "Collaboration",
+      "description": "Push Commits",
+      "forms": ["git push", "git push origin main", "git push --force-with-lease"],
+      "flags": [
+        {
+          "key": "<remote> <refspec>",
+          "param_key": "refspec",
+          "label": "Remote and refspec",
+          "type": "string",
+          "manualOnly": false,
+          "required": false,
+          "example": "origin main",
+          "previewOrder": 1
+        },
+        {
+          "key": "--set-upstream",
+          "param_key": "set_upstream",
+          "label": "Set upstream (alias -u)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "example": "--set-upstream origin feature",
+          "previewOrder": 5
+        },
+        {
+          "key": "--force",
+          "param_key": "force",
+          "label": "Force push",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "advanced": true,
+          "confirmation": "dangerous",
+          "example": "--force",
+          "previewOrder": 10
+        },
+        {
+          "key": "--force-with-lease",
+          "param_key": "force_with_lease",
+          "label": "Safer force push",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "advanced": true,
+          "confirmation": "warn-if-remote-changed",
+          "previewOrder": 11
+        },
+        {
+          "key": "--tags",
+          "param_key": "tags",
+          "label": "Push tags",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 12
+        },
+        {
+          "key": "--delete",
+          "param_key": "delete_remote",
+          "label": "Delete remote branch (refs)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "confirmation": "dangerous",
+          "example": "git push origin :feature",
+          "previewOrder": 20
+        }
+      ],
+      "notes": "Prefer --force-with-lease over --force when rewriting history.",
+      "safety": ["network", "destructive"]
+    },
+    {
+      "action_key": "remote",
+      "name": "git remote",
+      "category": "Collaboration",
+      "description": "Manage Remotes",
+      "forms": ["git remote", "git remote add origin <url>", "git remote set-url origin <newurl>"],
+      "flags": [
+        {
+          "key": "",
+          "param_key": "subcommand_or_name",
+          "label": "Subcommand or remote name",
+          "type": "string",
+          "manualOnly": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "-v",
+          "param_key": "verbose",
+          "label": "Show URLs",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 2
+        },
+        {
+          "key": "add",
+          "param_key": "add",
+          "label": "Add remote",
+          "type": "object",
+          "manualOnly": true,
+          "previewOrder": 10,
+          "example": "git remote add origin git@host:org/repo.git"
+        },
+        {
+          "key": "remove",
+          "param_key": "remove",
+          "label": "Remove remote",
+          "type": "object",
+          "manualOnly": true,
+          "previewOrder": 11
+        },
+        {
+          "key": "set-url",
+          "param_key": "set_url",
+          "label": "Change remote URL",
+          "type": "object",
+          "manualOnly": true,
+          "previewOrder": 12
+        },
+        {
+          "key": "show",
+          "param_key": "show",
+          "label": "Show remote verbose info",
+          "type": "boolean",
+          "manualOnly": true,
+          "previewOrder": 20
+        }
+      ],
+      "notes": "Use git remote -v to confirm fetch/push URLs.",
+      "safety": []
+    },
+    {
+      "action_key": "ls-remote",
+      "name": "git ls-remote",
+      "category": "Collaboration",
+      "description": "List Remote Refs",
+      "forms": ["git ls-remote <url>", "git ls-remote --heads <url>"],
+      "flags": [
+        {
+          "key": "<url>",
+          "param_key": "url",
+          "label": "Remote URL",
+          "type": "url",
+          "manualOnly": true,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "--heads",
+          "param_key": "heads",
+          "label": "List heads only",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "--tags",
+          "param_key": "tags",
+          "label": "List tags only",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 6
+        }
+      ],
+      "notes": "Useful in scripts to inspect remote refs before cloning or pushing.",
+      "safety": ["network"]
+    },
+    {
+      "action_key": "credential",
+      "name": "git credential",
+      "category": "Collaboration",
+      "description": "Manage Credentials",
+      "forms": ["git credential fill", "git credential approve", "git credential reject"],
+      "flags": [
+        {
+          "key": "fill",
+          "param_key": "fill",
+          "label": "Fill credentials (stdin/out protocol)",
+          "type": "subcommand",
+          "manualOnly": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "approve",
+          "param_key": "approve",
+          "label": "Approve and store credentials",
+          "type": "subcommand",
+          "manualOnly": true,
+          "previewOrder": 2
+        },
+        {
+          "key": "reject",
+          "param_key": "reject",
+          "label": "Reject credentials",
+          "type": "subcommand",
+          "manualOnly": true,
+          "previewOrder": 3
+        }
+      ],
+      "notes": "Better to configure OS credential managers (manager-core) rather than storing plain text.",
+      "safety": ["secrets"]
+    },
+    {
+      "action_key": "stash",
+      "name": "git stash",
+      "category": "Stash",
+      "description": "Stash Changes",
+      "forms": [
+        "git stash push -m \"message\"",
+        "git stash push --include-untracked",
+        "git stash list",
+        "git stash apply stash@{0}",
+        "git stash pop"
+      ],
+      "flags": [
+        {
+          "key": "push",
+          "param_key": "push",
+          "label": "Push changes to stash",
+          "type": "subcommand",
+          "manualOnly": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "-m",
+          "param_key": "message",
+          "label": "Stash message",
+          "type": "string",
+          "manualOnly": true,
+          "previewOrder": 2
+        },
+        {
+          "key": "-u",
+          "param_key": "include_untracked",
+          "label": "Include untracked files",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "-a",
+          "param_key": "all_include_ignored",
+          "label": "Include ignored files",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "confirmation": "warn-if-large",
+          "previewOrder": 6
+        },
+        {
+          "key": "list",
+          "param_key": "list",
+          "label": "List stashes",
+          "type": "subcommand",
+          "manualOnly": false,
+          "previewOrder": 10
+        },
+        {
+          "key": "show",
+          "param_key": "show",
+          "label": "Show stash summary",
+          "type": "subcommand",
+          "manualOnly": false,
+          "previewOrder": 11
+        },
+        {
+          "key": "apply",
+          "param_key": "apply",
+          "label": "Apply stash (keep it)",
+          "type": "subcommand",
+          "manualOnly": false,
+          "previewOrder": 12
+        },
+        {
+          "key": "pop",
+          "param_key": "pop",
+          "label": "Apply and drop stash",
+          "type": "subcommand",
+          "manualOnly": false,
+          "previewOrder": 13
+        },
+        {
+          "key": "branch",
+          "param_key": "branch_from_stash",
+          "label": "Create branch from stash",
+          "type": "subcommand",
+          "manualOnly": true,
+          "example": "git stash branch myfix stash@{0}",
+          "previewOrder": 20
+        }
+      ],
+      "notes": "Stashes are referenced by stash@{n}; use git stash show -p stash@{1} to view the patch.",
+      "safety": []
+    },
+    {
+      "action_key": "apply",
+      "name": "git apply",
+      "category": "Patch",
+      "description": "Apply Patch",
+      "forms": ["git apply patch.diff", "git apply --index patch.diff", "git apply --check patch.diff"],
+      "flags": [
+        {
+          "key": "<patchfile>",
+          "param_key": "patchfile",
+          "label": "Patch file path",
+          "type": "path",
+          "manualOnly": true,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "--index",
+          "param_key": "index",
+          "label": "Apply and update index (stage)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "--check",
+          "param_key": "check",
+          "label": "Check if patch applies (dry-run)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 6
+        },
+        {
+          "key": "-R",
+          "param_key": "reverse",
+          "label": "Reverse apply",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 7
+        }
+      ],
+      "notes": "git apply is for working-tree patch application; use git am for mailbox->commits.",
+      "safety": []
+    },
+    {
+      "action_key": "bisect",
+      "name": "git bisect",
+      "category": "History",
+      "description": "Find Bad Commit",
+      "forms": ["git bisect start", "git bisect bad", "git bisect good <commit>", "git bisect run <test-script>"],
+      "flags": [
+        {
+          "key": "start",
+          "param_key": "start",
+          "label": "Start bisect session",
+          "type": "subcommand",
+          "manualOnly": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "bad",
+          "param_key": "bad",
+          "label": "Mark current as bad",
+          "type": "subcommand",
+          "manualOnly": true,
+          "previewOrder": 2
+        },
+        {
+          "key": "good",
+          "param_key": "good",
+          "label": "Mark known good commit",
+          "type": "string",
+          "manualOnly": true,
+          "previewOrder": 3
+        },
+        {
+          "key": "run",
+          "param_key": "run",
+          "label": "Automate bisection using test script",
+          "type": "string",
+          "manualOnly": true,
+          "example": "git bisect run ./test.sh",
+          "previewOrder": 10
+        },
+        {
+          "key": "reset",
+          "param_key": "reset",
+          "label": "End bisect session",
+          "type": "subcommand",
+          "manualOnly": true,
+          "previewOrder": 20
+        }
+      ],
+      "notes": "Bisection requires deterministic tests; use git bisect run to automate.",
+      "safety": []
+    },
+    {
+      "action_key": "grep",
+      "name": "git grep",
+      "category": "Inspect",
+      "description": "Search Files",
+      "forms": ["git grep \"pattern\"", "git grep -n", "git grep --cached"],
+      "flags": [
+        {
+          "key": "<pattern>",
+          "param_key": "pattern",
+          "label": "Search pattern (regexp)",
+          "type": "string",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "-n",
+          "param_key": "line_numbers",
+          "label": "Show line numbers",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "-i",
+          "param_key": "ignore_case",
+          "label": "Ignore case",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 6
+        },
+        {
+          "key": "--cached",
+          "param_key": "cached",
+          "label": "Search index",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 7
+        },
+        {
+          "key": "--name-only",
+          "param_key": "name_only",
+          "label": "File names only",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 8
+        },
+        {
+          "key": "-e",
+          "param_key": "multiple_patterns",
+          "label": "Multiple patterns",
+          "type": "array",
+          "manualOnly": true,
+          "example": "-e \"foo\" -e \"bar\"",
+          "previewOrder": 10
+        }
+      ],
+      "notes": "Use in scripts; e.g., git grep -l pattern | xargs ...",
+      "safety": []
+    },
+    {
+      "action_key": "blame",
+      "name": "git blame",
+      "category": "Inspect",
+      "description": "Annonate Lines",
+      "forms": ["git blame <file>", "git blame -L <start>,<end> <file>", "git blame --porcelain <file>"],
+      "flags": [
+        {
+          "key": "<file>",
+          "param_key": "file",
+          "label": "File to annotate",
+          "type": "path",
+          "manualOnly": false,
+          "required": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "-L",
+          "param_key": "line_range",
+          "label": "Line range",
+          "type": "string",
+          "manualOnly": true,
+          "example": "-L 10,50",
+          "previewOrder": 5
+        },
+        {
+          "key": "-w",
+          "param_key": "ignore_whitespace",
+          "label": "Ignore whitespace-only changes",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 6
+        },
+        {
+          "key": "--porcelain",
+          "param_key": "porcelain",
+          "label": "Parseable output",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 10
+        }
+      ],
+      "notes": null,
+      "safety": []
+    },
+    {
+      "action_key": "clean",
+      "name": "git clean",
+      "category": "Maintenance",
+      "description": "Remove Untracked",
+      "forms": ["git clean -n", "git clean -f", "git clean -fdx", "git clean -e <pattern>"],
+      "flags": [
+        {
+          "key": "-n",
+          "param_key": "dry_run",
+          "label": "Dry-run (show what would be removed)",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "-f",
+          "param_key": "force",
+          "label": "Force deletion",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "confirmation": "dangerous",
+          "previewOrder": 2
+        },
+        {
+          "key": "-d",
+          "param_key": "directories",
+          "label": "Remove untracked directories",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 3
+        },
+        {
+          "key": "-x",
+          "param_key": "remove_ignored",
+          "label": "Also remove ignored files",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "confirmation": "dangerous",
+          "previewOrder": 4
+        },
+        {
+          "key": "-e",
+          "param_key": "exclude_pattern",
+          "label": "Exclude pattern",
+          "type": "string",
+          "manualOnly": true,
+          "example": "-e !important.txt",
+          "previewOrder": 10
+        }
+      ],
+      "notes": "Use -n first to preview removals; -x deletes ignored files including config—use with caution.",
+      "safety": ["destructive"]
+    },
+    {
+      "action_key": "archive",
+      "name": "git archive",
+      "category": "Repository",
+      "description": "Create Archive",
+      "forms": ["git archive --format=tar --output=repo.tar HEAD", "git archive --format=zip --output=repo.zip --prefix=repo/ HEAD"],
+      "flags": [
+        {
+          "key": "--format",
+          "param_key": "format",
+          "label": "Archive format (tar|zip)",
+          "type": "string",
+          "manualOnly": false,
+          "validate": { "oneOf": ["tar", "zip"] },
+          "default": "tar",
+          "example": "--format=tar",
+          "previewOrder": 1
+        },
+        {
+          "key": "--output",
+          "param_key": "output",
+          "label": "Output file",
+          "type": "path",
+          "manualOnly": false,
+          "required": true,
+          "example": "--output=repo.tar",
+          "previewOrder": 2
+        },
+        {
+          "key": "--prefix",
+          "param_key": "prefix",
+          "label": "Prefix inside archive",
+          "type": "string",
+          "manualOnly": true,
+          "example": "--prefix=repo/",
+          "previewOrder": 3
+        }
+      ],
+      "notes": "Useful to produce release snapshots.",
+      "safety": []
+    },
+    {
+      "action_key": "bundle",
+      "name": "git bundle",
+      "category": "Repository",
+      "description": "Create Bundle",
+      "forms": ["git bundle create repo.bundle --all", "git clone repo.bundle <dir>", "git bundle list-heads repo.bundle"],
+      "flags": [
+        {
+          "key": "create",
+          "param_key": "create",
+          "label": "Create a bundle",
+          "type": "subcommand",
+          "manualOnly": true,
+          "example": "git bundle create repo.bundle --all",
+          "previewOrder": 1
+        },
+        {
+          "key": "list-heads",
+          "param_key": "list_heads",
+          "label": "List refs inside bundle",
+          "type": "subcommand",
+          "manualOnly": true,
+          "previewOrder": 2
+        },
+        {
+          "key": "verify",
+          "param_key": "verify",
+          "label": "Verify bundle",
+          "type": "subcommand",
+          "manualOnly": true,
+          "previewOrder": 3
+        }
+      ],
+      "notes": "Transfer repository offline by creating bundle, copying, then cloning/applying.",
+      "safety": []
+    },
+    {
+      "action_key": "submodule",
+      "name": "git submodule",
+      "category": "Collaboration",
+      "description": "Manage Submodules",
+      "forms": ["git submodule add <url> [path]", "git submodule update --init --recursive", "git submodule foreach 'git pull'"],
+      "flags": [
+        {
+          "key": "add",
+          "param_key": "add",
+          "label": "Add submodule",
+          "type": "object",
+          "manualOnly": true,
+          "example": "git submodule add git@host:lib.git vendor/lib",
+          "previewOrder": 1
+        },
+        {
+          "key": "init",
+          "param_key": "init",
+          "label": "Initialize local submodule config",
+          "type": "subcommand",
+          "manualOnly": true,
+          "previewOrder": 2
+        },
+        {
+          "key": "update",
+          "param_key": "update",
+          "label": "Fetch and checkout submodule commit",
+          "type": "subcommand",
+          "manualOnly": true,
+          "example": "git submodule update --init --recursive",
+          "previewOrder": 3
+        },
+        {
+          "key": "foreach",
+          "param_key": "foreach",
+          "label": "Run command in submodules",
+          "type": "string",
+          "manualOnly": true,
+          "example": "git submodule foreach 'git pull origin main'",
+          "previewOrder": 10
+        },
+        {
+          "key": "deinit",
+          "param_key": "deinit",
+          "label": "Deinitialize submodule",
+          "type": "string",
+          "manualOnly": true,
+          "previewOrder": 11
+        },
+        {
+          "key": "sync",
+          "param_key": "sync",
+          "label": "Sync URLs",
+          "type": "boolean",
+          "manualOnly": true,
+          "previewOrder": 12
+        }
+      ],
+      "notes": "Using --recurse-submodules on clone reduces surprises when submodules are present.",
+      "safety": []
+    },
+    {
+      "action_key": "worktree",
+      "name": "git worktree",
+      "category": "WorkingTree",
+      "description": "Manage Worktrees",
+      "forms": ["git worktree add <path> <branch>", "git worktree list", "git worktree remove <path>"],
+      "flags": [
+        {
+          "key": "add",
+          "param_key": "add",
+          "label": "Add worktree",
+          "type": "object",
+          "manualOnly": true,
+          "example": "git worktree add ../w-tree feature-branch",
+          "previewOrder": 1
+        },
+        {
+          "key": "list",
+          "param_key": "list",
+          "label": "List worktrees",
+          "type": "subcommand",
+          "manualOnly": false,
+          "previewOrder": 2
+        },
+        {
+          "key": "remove",
+          "param_key": "remove",
+          "label": "Remove worktree",
+          "type": "string",
+          "manualOnly": true,
+          "previewOrder": 3
+        },
+        {
+          "key": "prune",
+          "param_key": "prune",
+          "label": "Prune stale worktrees",
+          "type": "boolean",
+          "manualOnly": true,
+          "previewOrder": 10
+        }
+      ],
+      "notes": "Worktrees share object DB but have separate working directories.",
+      "safety": []
+    },
+    {
+      "action_key": "config",
+      "name": "git config",
+      "category": "Repository",
+      "description": "Manage Config",
+      "forms": ["git config user.name \"Name\"", "git config --global user.email \"a@b\"", "git config --list"],
+      "flags": [
+        {
+          "key": "<key> <value>",
+          "param_key": "key_value",
+          "label": "Config key and value",
+          "type": "string",
+          "manualOnly": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "--global",
+          "param_key": "global",
+          "label": "Global config",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "--system",
+          "param_key": "system",
+          "label": "System config",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 6
+        },
+        {
+          "key": "--local",
+          "param_key": "local",
+          "label": "Local (repo) config",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 7
+        },
+        {
+          "key": "--list",
+          "param_key": "list",
+          "label": "List config",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 10
+        },
+        {
+          "key": "--get",
+          "param_key": "get",
+          "label": "Get config value",
+          "type": "string",
+          "manualOnly": false,
+          "previewOrder": 11
+        },
+        {
+          "key": "--unset",
+          "param_key": "unset",
+          "label": "Unset key",
+          "type": "string",
+          "manualOnly": true,
+          "previewOrder": 12
+        }
+      ],
+      "notes": "Many credentials and pull behaviors are configured here (e.g., credential.helper, pull.rebase).",
+      "safety": ["secrets"]
+    },
+    {
+      "action_key": "help",
+      "name": "git help",
+      "category": "Auxiliary",
+      "description": "Show Help",
+      "forms": ["git help <command>", "git <command> --help", "git help -a"],
+      "flags": [
+        {
+          "key": "<command>",
+          "param_key": "command",
+          "label": "Command to open help for",
+          "type": "string",
+          "manualOnly": false,
+          "required": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "-a",
+          "param_key": "all",
+          "label": "List available commands",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 5
+        },
+        {
+          "key": "-g",
+          "param_key": "guides",
+          "label": "List guides",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 6
+        }
+      ],
+      "notes": null,
+      "safety": []
+    },
+    {
+      "action_key": "describe",
+      "name": "git describe",
+      "category": "Inspect",
+      "description": "Describe Commit",
+      "forms": ["git describe --tags", "git describe --always", "git describe --dirty"],
+      "flags": [
+        {
+          "key": "--tags",
+          "param_key": "tags",
+          "label": "Prefer tags",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "--always",
+          "param_key": "always",
+          "label": "Show abbreviated SHA if no tag",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 2
+        },
+        {
+          "key": "--dirty",
+          "param_key": "dirty",
+          "label": "Append -dirty if working tree changed",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 3
+        },
+        {
+          "key": "--long",
+          "param_key": "long",
+          "label": "Long format",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 4
+        }
+      ],
+      "notes": "Useful to generate build versions and release names.",
+      "safety": []
+    },
+    {
+      "action_key": "daemon",
+      "name": "git daemon",
+      "category": "Collaboration",
+      "description": "Serve Repos",
+      "forms": ["git daemon --base-path=/srv/git --export-all", "git daemon --enable=receive-pack"],
+      "flags": [
+        {
+          "key": "--reuseaddr",
+          "param_key": "reuseaddr",
+          "label": "Reuse address",
+          "type": "boolean",
+          "manualOnly": true,
+          "default": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "--base-path",
+          "param_key": "base_path",
+          "label": "Base path to serve",
+          "type": "path",
+          "manualOnly": true,
+          "previewOrder": 2
+        },
+        {
+          "key": "--export-all",
+          "param_key": "export_all",
+          "label": "Export all repos",
+          "type": "boolean",
+          "manualOnly": true,
+          "previewOrder": 3
+        },
+        {
+          "key": "--enable=receive-pack",
+          "param_key": "enable_receive_pack",
+          "label": "Allow pushes",
+          "type": "boolean",
+          "manualOnly": true,
+          "confirmation": "warn-expose-server",
+          "previewOrder": 10
+        }
+      ],
+      "notes": "Generally replaced by SSH/HTTP(S) hosting; exposing daemon requires caution.",
+      "safety": ["network", "security"]
+    },
+    {
+      "action_key": "reset",
+      "name": "git reset",
+      "category": "History",
+      "description": "Reset HEAD",
+      "forms": ["git reset --soft <commit>", "git reset --mixed <commit>", "git reset --hard <commit>", "git reset <file>"],
+      "flags": [
+        {
+          "key": "--soft",
+          "param_key": "soft",
+          "label": "Move HEAD only; keep index & working tree",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "--mixed",
+          "param_key": "mixed",
+          "label": "Default: move HEAD and unstage changes",
+          "type": "boolean",
+          "default": true,
+          "manualOnly": true,
+          "previewOrder": 2
+        },
+        {
+          "key": "--hard",
+          "param_key": "hard",
+          "label": "Reset index and working tree (destructive)",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "confirmation": "dangerous",
+          "previewOrder": 3
+        },
+        {
+          "key": "--keep",
+          "param_key": "keep",
+          "label": "Reset unless conflicts",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 4
+        },
+        {
+          "key": "<file>",
+          "param_key": "file_unstage",
+          "label": "Unstage file (legacy)",
+          "type": "path",
+          "manualOnly": false,
+          "previewOrder": 10
+        }
+      ],
+      "notes": "--hard will delete uncommitted changes. Use with care.",
+      "safety": ["destructive"]
+    },
+    {
+      "action_key": "reflog",
+      "name": "git reflog",
+      "category": "History",
+      "description": "Show Reflog",
+      "forms": ["git reflog", "git reflog show <ref>", "git reflog expire --expire=now --all"],
+      "flags": [
+        {
+          "key": "",
+          "param_key": "default",
+          "label": "Show reflog",
+          "type": "subcommand",
+          "manualOnly": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "show",
+          "param_key": "show",
+          "label": "Show reflog for a ref",
+          "type": "string",
+          "manualOnly": true,
+          "previewOrder": 2
+        },
+        {
+          "key": "expire",
+          "param_key": "expire",
+          "label": "Expire reflogs",
+          "type": "string",
+          "manualOnly": true,
+          "example": "--expire=now --all",
+          "confirmation": "dangerous",
+          "previewOrder": 10
+        }
+      ],
+      "notes": "Use reflog to find previous HEAD after accidental reset --hard.",
+      "safety": []
+    },
+    {
+      "action_key": "filter-branch",
+      "name": "git filter-branch / git filter-repo",
+      "category": "History",
+      "description": "Rewrite History",
+      "forms": ["git filter-branch --tree-filter 'cmd' -- --all", "git filter-repo --path <file> --invert-paths"],
+      "flags": [
+        {
+          "key": "filter-branch",
+          "param_key": "filter_branch",
+          "label": "Legacy filter-branch usage",
+          "type": "string",
+          "manualOnly": true,
+          "advanced": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "filter-repo",
+          "param_key": "filter_repo",
+          "label": "Use git-filter-repo (external, recommended)",
+          "type": "string",
+          "manualOnly": true,
+          "advanced": true,
+          "previewOrder": 2
+        }
+      ],
+      "notes": "History rewriting is destructive—coordinate with collaborators and prefer git-filter-repo.",
+      "safety": ["destructive", "rewrites-history"]
+    },
+    {
+      "action_key": "cherry",
+      "name": "git cherry",
+      "category": "History",
+      "description": "Find Unique Commits [CHERRY]",
+      "forms": ["git cherry -v <upstream> <head>"],
+      "flags": [
+        {
+          "key": "-v",
+          "param_key": "verbose",
+          "label": "Verbose output",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "<upstream> <head>",
+          "param_key": "refs",
+          "label": "Upstream and head refs",
+          "type": "string",
+          "manualOnly": true,
+          "previewOrder": 2
+        }
+      ],
+      "notes": "Useful to evaluate commits unique to a branch.",
+      "safety": []
+    },
+    {
+      "action_key": "format-patch",
+      "name": "git format-patch",
+      "category": "Patch",
+      "description": "Create Patches",
+      "forms": ["git format-patch origin/main", "git format-patch -n <N>"],
+      "flags": [
+        {
+          "key": "<range>",
+          "param_key": "range",
+          "label": "Range (e.g., origin/main..HEAD)",
+          "type": "string",
+          "manualOnly": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "-n",
+          "param_key": "last_n",
+          "label": "Last N commits",
+          "type": "int",
+          "manualOnly": true,
+          "validate": { "min": 1 },
+          "previewOrder": 2
+        },
+        {
+          "key": "--stdout",
+          "param_key": "stdout",
+          "label": "Output patches to stdout",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 10
+        },
+        {
+          "key": "--cover-letter",
+          "param_key": "cover_letter",
+          "label": "Create cover letter",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 11
+        }
+      ],
+      "notes": "Used in email-based workflows; pair with git am at the receiver.",
+      "safety": []
+    },
+    {
+      "action_key": "am",
+      "name": "git am",
+      "category": "Patch",
+      "description": "Apply Patches",
+      "forms": ["git am <patches>", "git am --3way", "git am --signoff"],
+      "flags": [
+        {
+          "key": "<patches>",
+          "param_key": "patches",
+          "label": "Patch files to apply",
+          "type": "array",
+          "manualOnly": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "--3way",
+          "param_key": "three_way",
+          "label": "Attempt 3-way merge on conflicts",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 10
+        },
+        {
+          "key": "--signoff",
+          "param_key": "signoff",
+          "label": "Add sign-off to commits",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 11
+        }
+      ],
+      "notes": "Common for applying emailed patches.",
+      "safety": []
+    },
+    {
+      "action_key": "rerere",
+      "name": "git rerere",
+      "category": "Helpers",
+      "description": "Reuse Resolutions",
+      "forms": ["git config --global rerere.enabled true", "git rerere status", "git rerere clear"],
+      "flags": [
+        {
+          "key": "enable",
+          "param_key": "enable",
+          "label": "Enable rerere via config",
+          "type": "object",
+          "manualOnly": true,
+          "example": "git config --global rerere.enabled true",
+          "previewOrder": 1
+        },
+        {
+          "key": "status",
+          "param_key": "status",
+          "label": "Show rerere status",
+          "type": "subcommand",
+          "manualOnly": true,
+          "previewOrder": 2
+        },
+        {
+          "key": "clear",
+          "param_key": "clear",
+          "label": "Clear rerere state",
+          "type": "subcommand",
+          "manualOnly": true,
+          "previewOrder": 3
+        }
+      ],
+      "notes": "Helpful when repeatedly rebasing/merging the same conflicts.",
+      "safety": []
+    },
+    {
+      "action_key": "shortlog",
+      "name": "git shortlog",
+      "category": "Inspect",
+      "description": "Summarize Commits",
+      "forms": ["git shortlog -s -n origin/main..HEAD", "git shortlog --numbered --summary"],
+      "flags": [
+        {
+          "key": "-s",
+          "param_key": "summary",
+          "label": "Show commit counts",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 1
+        },
+        {
+          "key": "-n",
+          "param_key": "numbered",
+          "label": "Sort by number of commits",
+          "type": "boolean",
+          "default": false,
+          "previewOrder": 2
+        }
+      ],
+      "notes": "Useful for CONTRIBUTORS or release notes.",
+      "safety": []
+    },
+    {
+      "action_key": "fsck",
+      "name": "git fsck",
+      "category": "Maintenance",
+      "description": "Check Integrity",
+      "forms": ["git fsck --full", "git fsck --lost-found"],
+      "flags": [
+        {
+          "key": "--full",
+          "param_key": "full",
+          "label": "Perform full check",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "--lost-found",
+          "param_key": "lost_found",
+          "label": "Write dangling objects to .git/lost-found",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 2
+        }
+      ],
+      "notes": "Often run on server/backups to verify health.",
+      "safety": []
+    },
+    {
+      "action_key": "verify-pack",
+      "name": "git verify-pack",
+      "category": "Maintenance",
+      "description": "Inspect Pack",
+      "forms": ["git verify-pack -v .git/objects/pack/pack-*.idx"],
+      "flags": [
+        {
+          "key": "-v",
+          "param_key": "verbose",
+          "label": "Verbose",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "<pack.idx>",
+          "param_key": "pack_idx",
+          "label": "Pack index path",
+          "type": "path",
+          "manualOnly": true,
+          "required": true,
+          "previewOrder": 2
+        }
+      ],
+      "notes": "Used to diagnose pack bloat before prune/gc.",
+      "safety": []
+    },
+    {
+      "action_key": "count-objects",
+      "name": "git count-objects",
+      "category": "Maintenance",
+      "description": "Count Objects",
+      "forms": ["git count-objects -v"],
+      "flags": [
+        {
+          "key": "-v",
+          "param_key": "verbose",
+          "label": "Verbose output",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": false,
+          "previewOrder": 1
+        }
+      ],
+      "notes": "Quick repo size diagnostics.",
+      "safety": []
+    },
+    {
+      "action_key": "prune",
+      "name": "git prune",
+      "category": "Maintenance",
+      "description": "Prune Objects",
+      "forms": ["git prune", "git prune --expire <time>"],
+      "flags": [
+        {
+          "key": "",
+          "param_key": "default",
+          "label": "Prune unreachable objects",
+          "type": "subcommand",
+          "manualOnly": true,
+          "confirmation": "dangerous",
+          "previewOrder": 1
+        },
+        {
+          "key": "--expire",
+          "param_key": "expire",
+          "label": "Expire objects older than given time",
+          "type": "string",
+          "manualOnly": true,
+          "example": "--expire 2.weeks.ago",
+          "previewOrder": 2
+        }
+      ],
+      "notes": "Dangerous on backups; ensure you have refs and backups before pruning.",
+      "safety": ["destructive"]
+    },
+    {
+      "action_key": "gc",
+      "name": "git gc",
+      "category": "Maintenance",
+      "description": "Perform Garbage Collection",
+      "forms": ["git gc", "git gc --aggressive", "git gc --prune=now"],
+      "flags": [
+        {
+          "key": "--aggressive",
+          "param_key": "aggressive",
+          "label": "More thorough GC",
+          "type": "boolean",
+          "default": false,
+          "manualOnly": true,
+          "previewOrder": 1
+        },
+        {
+          "key": "--prune",
+          "param_key": "prune",
+          "label": "Prune unreachable objects older than time",
+          "type": "string",
+          "manualOnly": true,
+          "example": "--prune=now",
+          "previewOrder": 2
+        }
+      ],
+      "notes": "Used for scheduled server maintenance; can be slow and disk-heavy.",
+      "safety": []
+    },
+    {
+      "action_key": "whatchanged",
+      "name": "git whatchanged",
+      "category": "Deprecated",
+      "description": "Show Changes",
+      "forms": ["git whatchanged"],
+      "flags": [],
+      "notes": "Replaced by git log --name-status --pretty=...",
+      "safety": []
+    }
+  ]
+}
