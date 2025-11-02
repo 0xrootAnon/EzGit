@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -19,6 +20,12 @@ type StreamCallback func(line string, isErr bool)
 
 func (r *Runner) Run(ctx context.Context, name string, args []string, streamCb StreamCallback, timeout time.Duration) (int, string, string, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
+	env := os.Environ()
+	if strings.ToLower(name) == "git" {
+		env = append(env, "GIT_PAGER=cat")
+	}
+	cmd.Env = env
+
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
 		return -1, "", "", err

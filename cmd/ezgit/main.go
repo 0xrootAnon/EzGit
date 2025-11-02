@@ -64,6 +64,9 @@ type model struct {
 	previewParams    []string
 	previewSelected  int
 	editingParamKey  string
+	lastCmdName      string
+	lastArgs         []string
+	runCooldown      bool
 }
 
 type streamLineMsg struct {
@@ -118,6 +121,100 @@ var itemsByCategory = map[int][]string{
 	5: {
 		"Stash", "Apply stash", "Pop stash", "List stashes", "FSCK", "GC", "Prune", "Verify packs",
 	},
+}
+
+func (m *model) buildCmdFromSpec(spec combos.CommandSpec) (string, []string, string) {
+	parts := []string{"git", m.currentAction.Name}
+	visible := make([]combos.FlagDef, 0, len(spec.Flags))
+	for _, f := range spec.Flags {
+		if f.Advanced && !m.advancedVisible {
+			continue
+		}
+		visible = append(visible, f)
+	}
+
+	for _, f := range visible {
+		k := canonicalParamKey(f)
+
+		if f.ManualOnly {
+			if ti, ok := m.comboInputs[k]; ok && ti != nil {
+				v := strings.TrimSpace((*ti).Value())
+				if v != "" {
+					if strings.HasPrefix(f.Key, "-") {
+						parts = append(parts, f.Key, v)
+					} else {
+						parts = append(parts, v)
+					}
+					continue
+				}
+			}
+			if f.Default != nil {
+				if strings.HasPrefix(f.Key, "-") {
+					parts = append(parts, f.Key, fmt.Sprintf("%v", f.Default))
+				} else {
+					parts = append(parts, fmt.Sprintf("%v", f.Default))
+				}
+			}
+			continue
+		}
+
+		if !m.includedFlags[k] {
+			continue
+		}
+
+		isBool := strings.ToLower(f.Type) == "bool" || strings.ToLower(f.Type) == "boolean"
+		if f.Default != nil {
+			switch dv := f.Default.(type) {
+			case bool:
+				isBool = true
+			case float64:
+				if dv == 0.0 || dv == 1.0 {
+					isBool = true
+				}
+			default:
+				_ = dv
+			}
+		}
+
+		if isBool {
+			parts = append(parts, f.Key)
+			continue
+		}
+
+		if ti, ok := m.comboInputs[k]; ok && ti != nil {
+			v := strings.TrimSpace((*ti).Value())
+			if v != "" {
+				if strings.HasPrefix(f.Key, "-") {
+					parts = append(parts, f.Key, v)
+				} else {
+					parts = append(parts, v)
+				}
+				continue
+			}
+		}
+
+		if f.Default != nil {
+			if strings.HasPrefix(f.Key, "-") {
+				parts = append(parts, f.Key, fmt.Sprintf("%v", f.Default))
+			} else {
+				parts = append(parts, fmt.Sprintf("%v", f.Default))
+			}
+		} else if f.ParamKey != "" {
+			if strings.HasPrefix(f.Key, "-") {
+				parts = append(parts, f.Key)
+			} else {
+				parts = append(parts, f.Key)
+			}
+		} else {
+			parts = append(parts, f.Key)
+		}
+	}
+
+	args := parts[1:]
+
+	preview := strings.Join(parts, " ")
+
+	return "git", args, preview
 }
 
 func initialModel() *model {
@@ -424,7 +521,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, cmd
 				}
 				p := m.currentAction.Prompts[m.promptIndex]
-				m.wizardInputs[p.Key] = strings.TrimSpace(m.input.Value())
+				val := strings.TrimSpace(m.input.Value())
+				if val == "" && p.Default != "" {
+					val = p.Default
+				}
+				val = strings.ReplaceAll(val, "—", "-")
+				val = strings.ReplaceAll(val, "–", "-")
+				m.wizardInputs[p.Key] = val
 				m.input.SetValue("")
 				m.promptIndex++
 				if m.promptIndex >= len(m.currentAction.Prompts) {
@@ -589,6 +692,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return m, nil
 
 					case "enter":
+						if m.runCooldown {
+							m.runCooldown = false
+							return m, nil
+						}
 						return m.previewEnterHandler(spec)
 
 					case "a":
@@ -707,7 +814,24 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					backup := "preop/" + time.Now().Format("20060102-150405")
 					_, _, _, _ = (&execpkg.Runner{}).Run(context.Background(), "git", []string{"branch", backup}, nil, 0)
 
+					if spec, ok := combos.Get(m.currentAction.Name); ok {
+						cmdName, args, _ := m.buildCmdFromSpec(spec)
+						m.lastCmdName = cmdName
+						m.lastArgs = args
+						m.runCooldown = false
+						cmdRun, cancel := runActionCmdWithCancel(cmdName, args)
+						m.runCancel = cancel
+						m.streamLines = nil
+						m.mode = "running"
+						m.currentRunCmd = cmdRun
+						m.running = true
+						return m, cmdRun
+					}
+
 					cmdName, args, _ := m.currentAction.Build(m.wizardInputs)
+					m.lastCmdName = cmdName
+					m.lastArgs = args
+					m.runCooldown = false
 					cmdRun, cancel := runActionCmdWithCancel(cmdName, args)
 					m.runCancel = cancel
 					m.streamLines = nil
@@ -734,6 +858,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if fields[0] == "git" {
 						fields = fields[1:]
 					}
+					m.runCooldown = false
 					cmdRun, cancel := runActionCmdWithCancel("git", fields)
 					m.runCancel = cancel
 					m.streamLines = nil
@@ -760,6 +885,12 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentRunCmd = nil
 		m.runCancel = nil
 		if strings.TrimSpace(msg.Out) != "" {
+			m.streamLines = strings.Split(msg.Out, "\n")
+		} else {
+			m.streamLines = nil
+		}
+
+		if strings.TrimSpace(msg.Out) != "" {
 			m.statusLines = append(m.statusLines, strings.Split(msg.Out, "\n")...)
 		}
 		if strings.TrimSpace(msg.ErrOut) != "" {
@@ -770,6 +901,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.statusLines = append(m.statusLines, "[process finished successfully]")
 		}
+		m.runCooldown = true
 		_ = audit.AppendAudit(true, audit.Entry{
 			Timestamp: time.Now(),
 			Action: func() string {
@@ -778,7 +910,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return ""
 			}(),
-			Command: "", Args: nil,
+			Command:  m.lastCmdName,
+			Args:     m.lastArgs,
 			ExitCode: msg.Exit, Stdout: msg.Out, Stderr: msg.ErrOut,
 		})
 		return m, nil
@@ -888,7 +1021,24 @@ func (m *model) previewEnterHandler(spec combos.CommandSpec) (tea.Model, tea.Cmd
 		m.input.Focus()
 		return m, nil
 	}
+	if spec, ok := combos.Get(m.currentAction.Name); ok {
+		cmdName, args, _ := m.buildCmdFromSpec(spec)
+		m.lastCmdName = cmdName
+		m.lastArgs = args
+		m.runCooldown = false
+		cmd, cancel := runActionCmdWithCancel(cmdName, args)
+		m.runCancel = cancel
+		m.streamLines = nil
+		m.mode = "running"
+		m.currentRunCmd = cmd
+		m.running = true
+		return m, cmd
+	}
+
 	cmdName, args, _ := m.currentAction.Build(m.wizardInputs)
+	m.lastCmdName = cmdName
+	m.lastArgs = args
+	m.runCooldown = false
 	cmd, cancel := runActionCmdWithCancel(cmdName, args)
 	m.runCancel = cancel
 	m.streamLines = nil
@@ -1399,10 +1549,7 @@ func runActionCmdWithCancel(cmdName string, args []string) (tea.Cmd, context.Can
 	go func() {
 		runner := &execpkg.Runner{}
 		exit, out, errOut, err := runner.Run(ctx, cmdName, args, func(line string, isErr bool) {
-			select {
-			case lineCh <- streamLineMsg{Line: line, IsErr: isErr}:
-			default:
-			}
+			lineCh <- streamLineMsg{Line: line, IsErr: isErr}
 		}, 0)
 
 		doneCh <- actionDoneMsg{Exit: exit, Out: out, ErrOut: errOut, Err: err}
