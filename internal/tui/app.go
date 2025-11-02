@@ -1,3 +1,6 @@
+// EzGit © 2025 0xrootAnon
+// Licensed under the GNU GPL v3.0 or later.
+// See LICENSE for details.
 package tui
 
 import (
