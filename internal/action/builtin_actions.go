@@ -283,7 +283,7 @@ func RegisterBuiltins(r *Registry) {
 		},
 	})
 
-	r.Register(&ActionDef{
+	/*	r.Register(&ActionDef{
 		Name:     "raw",
 		Help:     "Run raw git command (expert mode). Type args exactly as you would in shell, without leading 'git'.",
 		Category: CatRepository,
@@ -296,7 +296,7 @@ func RegisterBuiltins(r *Registry) {
 			preview := "git " + strings.Join(parts, " ")
 			return "git", parts, preview
 		},
-	})
+	})*/
 
 	registerPassthrough(r, CatBranch, "rebase", "Rebase (non-interactive)", []Prompt{{Key: "args", Label: "rebase args (e.g. origin/main)", Default: ""}}, []string{"rebase"})
 	registerPassthrough(r, CatWork, "diff", "Show changes", []Prompt{{Key: "args", Label: "diff args (e.g. HEAD~1..HEAD)", Default: ""}}, []string{"diff"})

@@ -18,6 +18,7 @@ import (
 	"ezgit/internal/windows"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -29,11 +30,17 @@ const (
 )
 
 const asciiHeader = `
-┏━╸╺━┓┏━╸╻╺┳╸
-┣╸ ┏━┛┃╺┓┃ ┃ 
-┗━╸┗━╸┗━┛╹ ╹ 
-`
+EzGit
 
+┏━╸╺━┓┏━╸╻╺┳╸
+┣╸ ┏━┛┃╺┓┃ ┃
+┗━╸┗━╸┗━┛╹ ╹`
+
+/*
+┏━╸╺━┓┏━╸╻╺┳╸
+┣╸ ┏━┛┃╺┓┃ ┃
+┗━╸┗━╸┗━┛╹ ╹
+*/
 type model struct {
 	items            []string
 	cursor           int
@@ -64,6 +71,9 @@ type model struct {
 	includedFlags    map[string]bool
 	validationErrors map[string]string
 	termWidth        int
+	termHeight       int
+	viewport         viewport.Model
+	userScrolled     bool
 	previewParams    []string
 	previewSelected  int
 	editingParamKey  string
@@ -220,6 +230,14 @@ func (m *model) buildCmdFromSpec(spec combos.CommandSpec) (string, []string, str
 	return "git", args, preview
 }
 
+func asciiHeaderRows() int {
+	h := strings.Trim(asciiHeader, "\n")
+	if h == "" {
+		return 0
+	}
+	return len(strings.Split(h, "\n"))
+}
+
 func initialModel() *model {
 	ti := textinput.New()
 	ti.Placeholder = ""
@@ -254,9 +272,11 @@ func initialModel() *model {
 		includedFlags:    make(map[string]bool),
 		validationErrors: make(map[string]string),
 
-		termWidth: 80,
+		termWidth:  80,
+		termHeight: 24,
 	}
 
+	m.viewport = viewport.New(10, 3)
 	return &m
 }
 func canonicalParamKey(f combos.FlagDef) string {
@@ -317,6 +337,72 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.termWidth = msg.Width
+		m.termHeight = msg.Height
+
+		headerRows := asciiHeaderRows()
+		footerRows := 1
+		reserved := headerRows + footerRows + 2
+		contentHeight := 24
+		if m.termHeight > 0 {
+			contentHeight = m.termHeight - reserved
+		}
+		if contentHeight < 3 {
+			contentHeight = 3
+		}
+
+		termW := 80
+		if m.termWidth > 0 {
+			termW = m.termWidth
+		}
+
+		var leftContent string
+		switch m.mode {
+		case "home":
+			leftContent = m.renderCategoriesBox()
+		case "verbs":
+			leftContent = m.renderVerbsPane()
+		case "wizard":
+			leftContent = m.renderWizard()
+		case "preview":
+			leftContent = m.renderPreview()
+		case "confirm":
+			leftContent = m.renderConfirm()
+		default:
+			leftContent = m.renderCategoriesBox()
+		}
+
+		leftPanelRendered := m.panelStyle.Copy().Height(contentHeight).Render(leftContent)
+		leftW := lipgloss.Width(leftPanelRendered)
+
+		gap := 3
+		rightWidth := termW - leftW - gap
+		minRight := 40
+		if rightWidth < minRight {
+			rightWidth = minRight
+		}
+		if rightWidth > termW-10 {
+			rightWidth = termW - 10
+		}
+
+		panelOuterPadding := 1
+		panelBorder := 1
+		innerHoriz := panelBorder*2 + panelOuterPadding*2
+		innerVert := panelBorder*2 + panelOuterPadding*2
+
+		panelHeaderLines := 1
+
+		vpW := rightWidth - innerHoriz
+		vpH := contentHeight - innerVert - panelHeaderLines
+
+		if vpW < 10 {
+			vpW = 10
+		}
+		if vpH < 3 {
+			vpH = 3
+		}
+
+		m.viewport.Width = vpW
+		m.viewport.Height = vpH
 		return m, nil
 	case tea.KeyMsg:
 		k := msg.String()
@@ -338,17 +424,38 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			case "pgup":
-				if m.scroll > 0 {
-					m.scroll -= 10
-					if m.scroll < 0 {
-						m.scroll = 0
-					}
+				half := m.viewport.Height / 2
+				if half < 1 {
+					half = 1
 				}
+				m.viewport.LineUp(half)
+				m.userScrolled = true
 				return m, nil
+
 			case "pgdown":
-				m.scroll += 10
+				half := m.viewport.Height / 2
+				if half < 1 {
+					half = 1
+				}
+				m.viewport.LineDown(half)
 				return m, nil
 			}
+		}
+		if k == "pgup" || k == "pgdown" {
+			half := 10
+			if m.termHeight > 0 {
+				half = m.termHeight / 2
+				if half < 3 {
+					half = 3
+				}
+			}
+			if k == "pgup" {
+				m.viewport.LineUp(half)
+				m.userScrolled = true
+			} else {
+				m.viewport.LineDown(half)
+			}
+			return m, nil
 		}
 
 		if m.mode == "home" {
@@ -876,6 +983,39 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case streamLineMsg:
 		m.streamLines = append(m.streamLines, msg.Line)
+		/*if len(m.streamLines) > 0 {
+			m.viewport.SetContent(strings.Join(m.streamLines, "\n"))
+			m.viewport.GotoBottom()
+		} else {
+			m.viewport.SetContent(strings.Join(m.statusLines, "\n"))
+		}*/
+		if len(m.streamLines) > 0 {
+			m.viewport.SetContent(strings.Join(m.streamLines, "\n"))
+			if !m.userScrolled {
+				m.viewport.GotoBottom()
+			}
+		} else {
+			m.viewport.SetContent(strings.Join(m.statusLines, "\n") + "\n")
+		}
+		m.viewport.GotoBottom()
+
+		headerRows := asciiHeaderRows()
+		reserved := headerRows + 1 + 2
+		available := 24
+		if m.termHeight > 0 {
+			available = m.termHeight - reserved
+		}
+		if available < 3 {
+			available = 3
+		}
+
+		total := len(m.streamLines)
+		if total > available {
+			m.scroll = total - available
+		} else {
+			m.scroll = 0
+		}
+
 		if m.currentRunCmd != nil {
 			return m, m.currentRunCmd
 		}
@@ -883,15 +1023,27 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case actionDoneMsg:
 		m.running = false
+		m.userScrolled = false
 		m.mode = "preview"
 		m.input.Blur()
 		m.currentRunCmd = nil
 		m.runCancel = nil
+
 		if strings.TrimSpace(msg.Out) != "" {
 			m.streamLines = strings.Split(msg.Out, "\n")
 		} else {
 			m.streamLines = nil
 		}
+
+		if m.streamLines != nil && len(m.streamLines) > 0 {
+			m.viewport.SetContent(strings.Join(m.streamLines, "\n"))
+			if !m.userScrolled {
+				m.viewport.GotoBottom()
+			}
+		} else {
+			m.viewport.SetContent(strings.Join(m.statusLines, "\n") + "\n")
+		}
+		m.viewport.GotoBottom()
 
 		if strings.TrimSpace(msg.Out) != "" {
 			m.statusLines = append(m.statusLines, strings.Split(msg.Out, "\n")...)
@@ -1056,7 +1208,23 @@ func (m *model) View() string {
 		return ""
 	}
 
-	head := m.headStyle.Render(asciiHeader)
+	headerRows := asciiHeaderRows()
+	footerRows := 1
+	reserved := headerRows + footerRows + 2
+	contentHeight := 24
+	if m.termHeight > 0 {
+		contentHeight = m.termHeight - reserved
+	}
+	if contentHeight < 3 {
+		contentHeight = 3
+	}
+
+	termW := 80
+	if m.termWidth > 0 {
+		termW = m.termWidth
+	}
+
+	head := m.headStyle.Copy().Width(termW).Render(asciiHeader)
 	help := m.footerStyle.Render("Arrows: move • Enter: select • Esc: back • q: quit • PgUp/PgDn: scroll output")
 
 	var left string
@@ -1075,8 +1243,48 @@ func (m *model) View() string {
 		left = m.renderCategoriesBox()
 	}
 
-	outputBox := m.renderOutputWithStream()
-	main := lipgloss.JoinHorizontal(lipgloss.Top, m.panelStyle.Render(left), lipgloss.NewStyle().PaddingLeft(1).Render(outputBox))
+	leftPanelRendered := m.panelStyle.Copy().Height(contentHeight).Render(left)
+	leftWidth := lipgloss.Width(leftPanelRendered)
+
+	gap := 3
+	rightWidth := termW - int(leftWidth) - gap
+	if rightWidth < 40 {
+		rightWidth = 40
+	}
+	if rightWidth > termW-10 {
+		rightWidth = termW - 10
+	}
+
+	panelOuterPadding := 1
+	panelBorder := 1
+	innerHoriz := panelBorder*2 + panelOuterPadding*2
+	innerVert := panelBorder*2 + panelOuterPadding*2
+
+	panelHeaderLines := 1
+	vpW := rightWidth - innerHoriz
+	vpH := contentHeight - innerVert - panelHeaderLines
+
+	if vpW < 10 {
+		vpW = 10
+	}
+	if vpH < 3 {
+		vpH = 3
+	}
+	if m.viewport.Width != vpW || m.viewport.Height != vpH {
+		m.viewport.Width = vpW
+		m.viewport.Height = vpH
+	}
+
+	outputInner := m.renderOutputWithStream()
+	m.viewport.SetContent(outputInner)
+
+	outputHdr := lipgloss.NewStyle().Bold(true).Render("Output")
+	rightInner := lipgloss.JoinVertical(lipgloss.Left, outputHdr, m.viewport.View())
+
+	rightPanel := m.panelStyle.Copy().Width(rightWidth).Height(contentHeight).Render(rightInner)
+
+	leftPanel := leftPanelRendered
+	main := lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, lipgloss.NewStyle().PaddingLeft(1).Render(rightPanel))
 
 	return lipgloss.JoinVertical(lipgloss.Left, head, main, "", help)
 }
@@ -1501,7 +1709,6 @@ func (m model) renderConfirm() string {
 }
 
 func (m model) renderOutputWithStream() string {
-	head := lipgloss.NewStyle().Bold(true).Render("Output")
 	var content string
 	if len(m.streamLines) > 0 {
 		content = strings.Join(m.streamLines, "\n")
@@ -1509,9 +1716,10 @@ func (m model) renderOutputWithStream() string {
 		content = strings.Join(m.statusLines, "\n")
 	}
 	if strings.TrimSpace(content) == "" {
-		content = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("(no output yet)")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("(no output yet)\n")
 	}
-	return lipgloss.NewStyle().Width(80).Render(lipgloss.JoinVertical(lipgloss.Left, head, content))
+
+	return content
 }
 
 func (m model) renderCategoriesBox() string {
