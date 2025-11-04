@@ -209,7 +209,7 @@
       "action_key": "add",
       "name": "git add",
       "category": "WorkingTree",
-      "description": "Stage Changes",
+      "description": "Add Files",
       "forms": ["git add <pathspec>", "git add .", "git add -p"],
       "flags": [
         {
@@ -700,7 +700,7 @@
       "action_key": "show",
       "name": "git show",
       "category": "Inspect",
-      "description": "Show Objects",
+      "description": "View Commit Details",
       "forms": ["git show <commit>", "git show <commit>:path/to/file"],
       "flags": [
         {
@@ -743,7 +743,7 @@
       "action_key": "branch",
       "name": "git branch",
       "category": "Branching",
-      "description": "Manage Branches",
+      "description": "List Branches",
       "forms": ["git branch", "git branch -r", "git branch <name>"],
       "flags": [
         {
@@ -1030,7 +1030,7 @@
       "action_key": "cherry-pick",
       "name": "git cherry-pick",
       "category": "History",
-      "description": "Apply a commit from another branch onto current branch.",
+      "description": "Apply commit from another branch",
       "forms": ["git cherry-pick <commit>", "git cherry-pick -x <commit>", "git cherry-pick -n <commit>"],
       "flags": [
         {
@@ -1178,7 +1178,7 @@
       "action_key": "fetch",
       "name": "git fetch",
       "category": "Collaboration",
-      "description": "Fetch Remote",
+      "description": "Fetch from Remote",
       "forms": ["git fetch", "git fetch origin", "git fetch --prune", "git fetch --depth <n>"],
       "flags": [
         {
@@ -1224,7 +1224,7 @@
       "action_key": "pull",
       "name": "git pull",
       "category": "Collaboration",
-      "description": "Fetch & Merge",
+      "description": "Pull latest changes",
       "forms": ["git pull", "git pull --rebase", "git pull origin main"],
       "flags": [
         {
@@ -1632,7 +1632,7 @@
       "action_key": "grep",
       "name": "git grep",
       "category": "Inspect",
-      "description": "Search Files",
+      "description": "Search in tracked files",
       "forms": ["git grep \"pattern\"", "git grep -n", "git grep --cached"],
       "flags": [
         {
@@ -1689,7 +1689,7 @@
       "action_key": "blame",
       "name": "git blame",
       "category": "Inspect",
-      "description": "Annonate Lines",
+      "description": "Blame / Annotate file",
       "forms": ["git blame <file>", "git blame -L <start>,<end> <file>", "git blame --porcelain <file>"],
       "flags": [
         {
@@ -2140,7 +2140,7 @@
       "action_key": "reset",
       "name": "git reset",
       "category": "History",
-      "description": "Reset HEAD",
+      "description": "Reset branch to earlier commit",
       "forms": ["git reset --soft <commit>", "git reset --mixed <commit>", "git reset --hard <commit>", "git reset <file>"],
       "flags": [
         {
@@ -2188,7 +2188,7 @@
       "action_key": "reflog",
       "name": "git reflog",
       "category": "History",
-      "description": "Show Reflog",
+      "description": "Recover lost commits",
       "forms": ["git reflog", "git reflog show <ref>", "git reflog expire --expire=now --all"],
       "flags": [
         {
@@ -2254,7 +2254,7 @@
       "action_key": "cherry",
       "name": "git cherry",
       "category": "History",
-      "description": "Find Unique Commits [CHERRY]",
+      "description": "Find unmerged commits",
       "forms": ["git cherry -v <upstream> <head>"],
       "flags": [
         {
@@ -2486,7 +2486,7 @@
       "action_key": "prune",
       "name": "git prune",
       "category": "Maintenance",
-      "description": "Prune Objects",
+      "description": "Remove unreachable objects",
       "forms": ["git prune", "git prune --expire <time>"],
       "flags": [
         {
