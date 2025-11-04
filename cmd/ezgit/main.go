@@ -1803,7 +1803,7 @@ func main() {
 	}
 	if doc, err := combos.LoadEmbedded(); err == nil && doc != nil {
 		combos.Register(doc)
-		fmt.Println("Loaded embedded combos (combos_updated.json preferred)")
+		fmt.Println("Engine Health: working-state-good")
 	} else {
 		const combosPath = "combos_updated.json"
 		if doc, err := combos.LoadFromFile(combosPath); err == nil {

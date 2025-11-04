@@ -19,8 +19,6 @@
           "param_key": "bare",
           "label": "Bare repository",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "advanced": false,
           "required": false,
           "inferrableFrom": [],
@@ -133,9 +131,7 @@
           "param_key": "single_branch",
           "label": "Clone single branch",
           "type": "boolean",
-          "default": false,
           "advanced": false,
-          "manualOnly": false,
           "validate": null,
           "example": "--single-branch",
           "previewOrder": 10,
@@ -160,8 +156,6 @@
           "param_key": "recurse_submodules",
           "label": "Init submodules",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "advanced": false,
           "example": "--recursive",
           "previewOrder": 12,
@@ -172,8 +166,6 @@
           "param_key": "recurse_submodules2",
           "label": "Init submodules (alternate)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "advanced": false,
           "example": "--recurse-submodules",
           "previewOrder": 13
@@ -183,8 +175,6 @@
           "param_key": "mirror",
           "label": "Mirror clone (bare)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "advanced": true,
           "example": "--mirror",
           "previewOrder": 15,
@@ -237,8 +227,6 @@
           "param_key": "dot",
           "label": "Add everything in current directory",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "example": ".",
           "previewOrder": 5
         },
@@ -247,8 +235,6 @@
           "param_key": "all",
           "label": "Stage all changes (including deletions)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "example": "-A",
           "previewOrder": 6
         },
@@ -257,8 +243,6 @@
           "param_key": "update",
           "label": "Stage tracked changes and deletions",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "example": "-u",
           "previewOrder": 7
         },
@@ -267,8 +251,6 @@
           "param_key": "patch",
           "label": "Interactive patch mode",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "advanced": false,
           "example": "-p",
           "previewOrder": 8
@@ -278,8 +260,6 @@
           "param_key": "intent_to_add",
           "label": "Record intent to add",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "advanced": true,
           "example": "--intent-to-add README.md",
           "previewOrder": 20
@@ -289,8 +269,6 @@
           "param_key": "renormalize",
           "label": "Re-normalize line endings",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "advanced": true,
           "example": "--renormalize .",
           "previewOrder": 21
@@ -329,8 +307,6 @@
           "param_key": "allow_failures",
           "label": "Allow failures",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "advanced": true,
           "previewOrder": 10
         }
@@ -363,8 +339,6 @@
           "param_key": "staged",
           "label": "Unstage (index -> working tree)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "example": "--staged",
           "previewOrder": 5
         },
@@ -383,8 +357,6 @@
           "param_key": "patch",
           "label": "Patch mode",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "example": "-p",
           "previewOrder": 20
         },
@@ -393,8 +365,6 @@
           "param_key": "worktree",
           "label": "Restore worktree",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "advanced": true,
           "previewOrder": 30
         }
@@ -423,8 +393,6 @@
           "param_key": "cached",
           "label": "Remove from index only (keep file)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 5
         },
         {
@@ -432,8 +400,6 @@
           "param_key": "recursive",
           "label": "Recursive remove",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 6
         },
         {
@@ -441,8 +407,6 @@
           "param_key": "force",
           "label": "Force remove",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "confirmation": "dangerous",
           "example": "-f",
           "previewOrder": 10
@@ -473,8 +437,6 @@
           "param_key": "amend",
           "label": "Amend last commit",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "advanced": true,
           "example": "--amend",
           "previewOrder": 10,
@@ -485,8 +447,6 @@
           "param_key": "auto_stage_tracked",
           "label": "Auto-stage tracked changes",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "example": "-a",
           "previewOrder": 11
         },
@@ -495,8 +455,6 @@
           "param_key": "signoff",
           "label": "Sign-off (DCO)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 12
         },
         {
@@ -504,8 +462,6 @@
           "param_key": "no_verify",
           "label": "Skip hooks",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "advanced": true,
           "previewOrder": 20
         },
@@ -524,8 +480,6 @@
           "param_key": "allow_empty",
           "label": "Allow empty commit",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 30
         },
         {
@@ -543,8 +497,6 @@
           "param_key": "verbose",
           "label": "Verbose commit (show diff)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 50
         }
       ],
@@ -563,8 +515,6 @@
           "param_key": "short",
           "label": "Short output",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 1
         },
         {
@@ -582,8 +532,6 @@
           "param_key": "branch",
           "label": "Show branch",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "example": "-sb",
           "previewOrder": 3
         }
@@ -603,8 +551,6 @@
           "param_key": "staged",
           "label": "Diff staged changes",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "example": "--staged",
           "previewOrder": 1
         },
@@ -613,8 +559,6 @@
           "param_key": "name_only",
           "label": "List file names only",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 2
         },
         {
@@ -622,8 +566,6 @@
           "param_key": "name_status",
           "label": "Show A/M/D with names",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 3
         },
         {
@@ -631,8 +573,6 @@
           "param_key": "stat",
           "label": "Show diffstat summary",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 4
         },
         {
@@ -651,8 +591,6 @@
           "param_key": "color_words",
           "label": "Word diff",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 11
         },
         {
@@ -660,8 +598,6 @@
           "param_key": "no_index",
           "label": "Diff files outside repo",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "advanced": true,
           "previewOrder": 20
         }
@@ -681,8 +617,6 @@
           "param_key": "oneline",
           "label": "Compact single-line per commit",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 1
         },
         {
@@ -690,8 +624,6 @@
           "param_key": "graph",
           "label": "Show ASCII graph",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 2
         },
         {
@@ -699,8 +631,6 @@
           "param_key": "decorate",
           "label": "Show refs next to commits",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 3
         },
         {
@@ -736,7 +666,6 @@
           "param_key": "stat",
           "label": "Show diffstat per commit",
           "type": "boolean",
-          "default": false,
           "previewOrder": 13
         },
         {
@@ -744,7 +673,6 @@
           "param_key": "patch",
           "label": "Show patch per commit",
           "type": "boolean",
-          "default": false,
           "previewOrder": 14
         },
         {
@@ -789,7 +717,6 @@
           "param_key": "name_only",
           "label": "List changed file names",
           "type": "boolean",
-          "default": false,
           "previewOrder": 5
         },
         {
@@ -806,7 +733,6 @@
           "param_key": "stat",
           "label": "Show stats only",
           "type": "boolean",
-          "default": false,
           "previewOrder": 12
         }
       ],
@@ -834,7 +760,6 @@
           "param_key": "remote",
           "label": "List remote branches",
           "type": "boolean",
-          "default": false,
           "previewOrder": 2
         },
         {
@@ -842,7 +767,6 @@
           "param_key": "all",
           "label": "List all branches",
           "type": "boolean",
-          "default": false,
           "previewOrder": 3
         },
         {
@@ -850,8 +774,6 @@
           "param_key": "delete",
           "label": "Delete branch (safe)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "confirmation": "confirm-if-not-merged",
           "previewOrder": 10
         },
@@ -860,8 +782,6 @@
           "param_key": "delete_force",
           "label": "Force delete branch",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "confirmation": "dangerous",
           "previewOrder": 11
         },
@@ -925,8 +845,6 @@
           "param_key": "detach",
           "label": "Detached HEAD",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 10
         },
         {
@@ -970,8 +888,6 @@
           "param_key": "discard_changes",
           "label": "Discard local changes (force)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "confirmation": "warn-if-uncommitted",
           "previewOrder": 10
         },
@@ -980,8 +896,6 @@
           "param_key": "detach",
           "label": "Detach HEAD at commit",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 11
         }
       ],
@@ -1009,8 +923,6 @@
           "param_key": "no_ff",
           "label": "Create a merge commit even if fast-forward",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 5
         },
         {
@@ -1018,8 +930,6 @@
           "param_key": "ff_only",
           "label": "Only fast-forward; fail otherwise",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 6
         },
         {
@@ -1027,8 +937,6 @@
           "param_key": "squash",
           "label": "Squash commits into working tree changes (no commit)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 7
         },
         {
@@ -1036,8 +944,6 @@
           "param_key": "abort",
           "label": "Abort merge (during conflicts)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "confirmation": "none",
           "previewOrder": 20
         },
@@ -1046,8 +952,6 @@
           "param_key": "no_commit",
           "label": "Do not auto-commit merge result",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 21
         }
       ],
@@ -1075,8 +979,6 @@
           "param_key": "interactive",
           "label": "Interactive rebase",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "advanced": true,
           "previewOrder": 5
         },
@@ -1094,7 +996,6 @@
           "param_key": "continue",
           "label": "Continue rebase after conflicts",
           "type": "boolean",
-          "manualOnly": true,
           "previewOrder": 20
         },
         {
@@ -1102,7 +1003,6 @@
           "param_key": "skip",
           "label": "Skip current patch",
           "type": "boolean",
-          "manualOnly": true,
           "previewOrder": 21
         },
         {
@@ -1110,7 +1010,6 @@
           "param_key": "abort",
           "label": "Abort rebase",
           "type": "boolean",
-          "manualOnly": true,
           "previewOrder": 22
         },
         {
@@ -1148,8 +1047,6 @@
           "param_key": "record_origin",
           "label": "Record origin in message",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 5
         },
         {
@@ -1157,8 +1054,6 @@
           "param_key": "no_commit",
           "label": "Do not auto-commit",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 6
         },
         {
@@ -1166,7 +1061,6 @@
           "param_key": "continue",
           "label": "Continue after resolving conflicts",
           "type": "boolean",
-          "manualOnly": true,
           "previewOrder": 20
         },
         {
@@ -1174,7 +1068,6 @@
           "param_key": "abort",
           "label": "Abort cherry-pick",
           "type": "boolean",
-          "manualOnly": true,
           "previewOrder": 21
         },
         {
@@ -1182,7 +1075,6 @@
           "param_key": "skip",
           "label": "Skip current commit",
           "type": "boolean",
-          "manualOnly": true,
           "previewOrder": 22
         }
       ],
@@ -1210,8 +1102,6 @@
           "param_key": "no_commit",
           "label": "Do not auto-commit (batch)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 5
         },
         {
@@ -1219,8 +1109,6 @@
           "param_key": "no_edit",
           "label": "Use default commit message",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 6
         },
         {
@@ -1258,8 +1146,6 @@
           "param_key": "annotated",
           "label": "Annotated tag with message",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 5
         },
         {
@@ -1275,8 +1161,6 @@
           "param_key": "delete",
           "label": "Delete tag locally",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 10
         },
         {
@@ -1284,8 +1168,6 @@
           "param_key": "sign",
           "label": "GPG sign tag (alias -s)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 20
         }
       ],
@@ -1314,8 +1196,6 @@
           "param_key": "prune",
           "label": "Prune stale remote-tracking branches",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 5
         },
         {
@@ -1334,8 +1214,6 @@
           "param_key": "all_remotes",
           "label": "Fetch all remotes",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 11
         }
       ],
@@ -1364,8 +1242,6 @@
           "param_key": "rebase",
           "label": "Use rebase instead of merge",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 5
         },
         {
@@ -1373,8 +1249,6 @@
           "param_key": "ff_only",
           "label": "Only fast-forward",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 6
         }
       ],
@@ -1403,8 +1277,6 @@
           "param_key": "set_upstream",
           "label": "Set upstream (alias -u)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "example": "--set-upstream origin feature",
           "previewOrder": 5
         },
@@ -1413,8 +1285,6 @@
           "param_key": "force",
           "label": "Force push",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "advanced": true,
           "confirmation": "dangerous",
           "example": "--force",
@@ -1425,8 +1295,6 @@
           "param_key": "force_with_lease",
           "label": "Safer force push",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "advanced": true,
           "confirmation": "warn-if-remote-changed",
           "previewOrder": 11
@@ -1436,8 +1304,6 @@
           "param_key": "tags",
           "label": "Push tags",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 12
         },
         {
@@ -1445,8 +1311,6 @@
           "param_key": "delete_remote",
           "label": "Delete remote branch (refs)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "confirmation": "dangerous",
           "example": "git push origin :feature",
           "previewOrder": 20
@@ -1475,7 +1339,6 @@
           "param_key": "verbose",
           "label": "Show URLs",
           "type": "boolean",
-          "default": false,
           "previewOrder": 2
         },
         {
@@ -1508,7 +1371,6 @@
           "param_key": "show",
           "label": "Show remote verbose info",
           "type": "boolean",
-          "manualOnly": true,
           "previewOrder": 20
         }
       ],
@@ -1536,7 +1398,6 @@
           "param_key": "heads",
           "label": "List heads only",
           "type": "boolean",
-          "default": false,
           "previewOrder": 5
         },
         {
@@ -1544,7 +1405,6 @@
           "param_key": "tags",
           "label": "List tags only",
           "type": "boolean",
-          "default": false,
           "previewOrder": 6
         }
       ],
@@ -1620,7 +1480,6 @@
           "param_key": "include_untracked",
           "label": "Include untracked files",
           "type": "boolean",
-          "default": false,
           "previewOrder": 5
         },
         {
@@ -1628,8 +1487,6 @@
           "param_key": "all_include_ignored",
           "label": "Include ignored files",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "confirmation": "warn-if-large",
           "previewOrder": 6
         },
@@ -1699,8 +1556,6 @@
           "param_key": "index",
           "label": "Apply and update index (stage)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 5
         },
         {
@@ -1708,8 +1563,6 @@
           "param_key": "check",
           "label": "Check if patch applies (dry-run)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 6
         },
         {
@@ -1717,8 +1570,6 @@
           "param_key": "reverse",
           "label": "Reverse apply",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 7
         }
       ],
@@ -1798,7 +1649,6 @@
           "param_key": "line_numbers",
           "label": "Show line numbers",
           "type": "boolean",
-          "default": false,
           "previewOrder": 5
         },
         {
@@ -1806,7 +1656,6 @@
           "param_key": "ignore_case",
           "label": "Ignore case",
           "type": "boolean",
-          "default": false,
           "previewOrder": 6
         },
         {
@@ -1814,7 +1663,6 @@
           "param_key": "cached",
           "label": "Search index",
           "type": "boolean",
-          "default": false,
           "previewOrder": 7
         },
         {
@@ -1822,7 +1670,6 @@
           "param_key": "name_only",
           "label": "File names only",
           "type": "boolean",
-          "default": false,
           "previewOrder": 8
         },
         {
@@ -1868,7 +1715,6 @@
           "param_key": "ignore_whitespace",
           "label": "Ignore whitespace-only changes",
           "type": "boolean",
-          "default": false,
           "previewOrder": 6
         },
         {
@@ -1876,7 +1722,6 @@
           "param_key": "porcelain",
           "label": "Parseable output",
           "type": "boolean",
-          "default": false,
           "previewOrder": 10
         }
       ],
@@ -1895,7 +1740,6 @@
           "param_key": "dry_run",
           "label": "Dry-run (show what would be removed)",
           "type": "boolean",
-          "default": false,
           "previewOrder": 1
         },
         {
@@ -1903,8 +1747,6 @@
           "param_key": "force",
           "label": "Force deletion",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "confirmation": "dangerous",
           "previewOrder": 2
         },
@@ -1913,7 +1755,6 @@
           "param_key": "directories",
           "label": "Remove untracked directories",
           "type": "boolean",
-          "default": false,
           "previewOrder": 3
         },
         {
@@ -1921,8 +1762,6 @@
           "param_key": "remove_ignored",
           "label": "Also remove ignored files",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "confirmation": "dangerous",
           "previewOrder": 4
         },
@@ -2071,7 +1910,6 @@
           "param_key": "sync",
           "label": "Sync URLs",
           "type": "boolean",
-          "manualOnly": true,
           "previewOrder": 12
         }
       ],
@@ -2115,7 +1953,6 @@
           "param_key": "prune",
           "label": "Prune stale worktrees",
           "type": "boolean",
-          "manualOnly": true,
           "previewOrder": 10
         }
       ],
@@ -2142,7 +1979,6 @@
           "param_key": "global",
           "label": "Global config",
           "type": "boolean",
-          "default": false,
           "previewOrder": 5
         },
         {
@@ -2150,7 +1986,6 @@
           "param_key": "system",
           "label": "System config",
           "type": "boolean",
-          "default": false,
           "previewOrder": 6
         },
         {
@@ -2158,7 +1993,6 @@
           "param_key": "local",
           "label": "Local (repo) config",
           "type": "boolean",
-          "default": false,
           "previewOrder": 7
         },
         {
@@ -2166,7 +2000,6 @@
           "param_key": "list",
           "label": "List config",
           "type": "boolean",
-          "default": false,
           "previewOrder": 10
         },
         {
@@ -2210,7 +2043,6 @@
           "param_key": "all",
           "label": "List available commands",
           "type": "boolean",
-          "default": false,
           "previewOrder": 5
         },
         {
@@ -2218,7 +2050,6 @@
           "param_key": "guides",
           "label": "List guides",
           "type": "boolean",
-          "default": false,
           "previewOrder": 6
         }
       ],
@@ -2237,7 +2068,6 @@
           "param_key": "tags",
           "label": "Prefer tags",
           "type": "boolean",
-          "default": false,
           "previewOrder": 1
         },
         {
@@ -2245,7 +2075,6 @@
           "param_key": "always",
           "label": "Show abbreviated SHA if no tag",
           "type": "boolean",
-          "default": false,
           "previewOrder": 2
         },
         {
@@ -2253,7 +2082,6 @@
           "param_key": "dirty",
           "label": "Append -dirty if working tree changed",
           "type": "boolean",
-          "default": false,
           "previewOrder": 3
         },
         {
@@ -2261,7 +2089,6 @@
           "param_key": "long",
           "label": "Long format",
           "type": "boolean",
-          "default": false,
           "previewOrder": 4
         }
       ],
@@ -2280,8 +2107,6 @@
           "param_key": "reuseaddr",
           "label": "Reuse address",
           "type": "boolean",
-          "manualOnly": true,
-          "default": true,
           "previewOrder": 1
         },
         {
@@ -2297,7 +2122,6 @@
           "param_key": "export_all",
           "label": "Export all repos",
           "type": "boolean",
-          "manualOnly": true,
           "previewOrder": 3
         },
         {
@@ -2305,7 +2129,6 @@
           "param_key": "enable_receive_pack",
           "label": "Allow pushes",
           "type": "boolean",
-          "manualOnly": true,
           "confirmation": "warn-expose-server",
           "previewOrder": 10
         }
@@ -2325,8 +2148,6 @@
           "param_key": "soft",
           "label": "Move HEAD only; keep index & working tree",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 1
         },
         {
@@ -2334,8 +2155,6 @@
           "param_key": "mixed",
           "label": "Default: move HEAD and unstage changes",
           "type": "boolean",
-          "default": true,
-          "manualOnly": true,
           "previewOrder": 2
         },
         {
@@ -2343,8 +2162,6 @@
           "param_key": "hard",
           "label": "Reset index and working tree (destructive)",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "confirmation": "dangerous",
           "previewOrder": 3
         },
@@ -2353,8 +2170,6 @@
           "param_key": "keep",
           "label": "Reset unless conflicts",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 4
         },
         {
@@ -2447,7 +2262,6 @@
           "param_key": "verbose",
           "label": "Verbose output",
           "type": "boolean",
-          "default": false,
           "previewOrder": 1
         },
         {
@@ -2491,7 +2305,6 @@
           "param_key": "stdout",
           "label": "Output patches to stdout",
           "type": "boolean",
-          "default": false,
           "previewOrder": 10
         },
         {
@@ -2499,7 +2312,6 @@
           "param_key": "cover_letter",
           "label": "Create cover letter",
           "type": "boolean",
-          "default": false,
           "previewOrder": 11
         }
       ],
@@ -2526,8 +2338,6 @@
           "param_key": "three_way",
           "label": "Attempt 3-way merge on conflicts",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 10
         },
         {
@@ -2535,8 +2345,6 @@
           "param_key": "signoff",
           "label": "Add sign-off to commits",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 11
         }
       ],
@@ -2591,7 +2399,6 @@
           "param_key": "summary",
           "label": "Show commit counts",
           "type": "boolean",
-          "default": false,
           "previewOrder": 1
         },
         {
@@ -2599,7 +2406,6 @@
           "param_key": "numbered",
           "label": "Sort by number of commits",
           "type": "boolean",
-          "default": false,
           "previewOrder": 2
         }
       ],
@@ -2618,8 +2424,6 @@
           "param_key": "full",
           "label": "Perform full check",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 1
         },
         {
@@ -2627,8 +2431,6 @@
           "param_key": "lost_found",
           "label": "Write dangling objects to .git/lost-found",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 2
         }
       ],
@@ -2647,8 +2449,6 @@
           "param_key": "verbose",
           "label": "Verbose",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 1
         },
         {
@@ -2676,8 +2476,6 @@
           "param_key": "verbose",
           "label": "Verbose output",
           "type": "boolean",
-          "default": false,
-          "manualOnly": false,
           "previewOrder": 1
         }
       ],
@@ -2725,8 +2523,6 @@
           "param_key": "aggressive",
           "label": "More thorough GC",
           "type": "boolean",
-          "default": false,
-          "manualOnly": true,
           "previewOrder": 1
         },
         {
