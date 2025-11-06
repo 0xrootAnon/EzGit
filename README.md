@@ -2,6 +2,8 @@
 
 > A fast, cinematic terminal UI that shouts **“fuck git”** and actually means it.
 
+>project at halt till my exams
+
 EzGit isn’t another Git wrapper. It’s a rebellion against command hell, a human-first, verb-based interface that lets you **interact, not memorize**.
 
 - No flags. No syntax. No overthinking.
